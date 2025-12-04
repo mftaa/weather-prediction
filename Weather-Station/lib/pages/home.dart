@@ -42,11 +42,12 @@ class _HomePageState extends State<HomePage>
 
   dynamic weatherSummaryStatus = "";
   List<dynamic> weatherData = [];
+  List<dynamic> weatherForecastData = [];
 
   Future<void> fetchWeatherData() async {
     try {
-      final response =
-          await http.get(Uri.parse('$myDomain/weather-data/get/last'));
+      final response = await http
+          .get(Uri.parse('$myDomain/weather-data/get/last?location=Gazipur'));
 
       if (response.statusCode == 200) {
         setState(() {
@@ -72,6 +73,26 @@ class _HomePageState extends State<HomePage>
       }
     } catch (e) {
       print('Error fetching weather data: $e');
+      // Jangan throw exception agar app tidak crash
+    }
+  }
+
+  Future<void> fetchWeatherForecast() async {
+    try {
+      // Get current date
+      final now = DateTime.now();
+      final response = await http.get(Uri.parse(
+          '$myDomain/weather-data/get-predicted-data?day=${now.day}&month=${now.month}&year=${now.year}'));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          weatherForecastData = json.decode(response.body);
+        });
+      } else {
+        throw Exception('Failed to load weather forecast data');
+      }
+    } catch (e) {
+      print('Error fetching weather forecast: $e');
       // Jangan throw exception agar app tidak crash
     }
   }
@@ -145,6 +166,7 @@ class _HomePageState extends State<HomePage>
     await Future.wait([
       fetchWeatherData(),
       fetchUserInfo(),
+      fetchWeatherForecast(),
     ]);
     setState(() {
       _isLoading = false;
@@ -291,7 +313,7 @@ class _HomePageState extends State<HomePage>
         Expanded(
           child: _buildInfoCard(
             "Air Pressure",
-            "1012 hPa",
+            "${weatherData[0]['airPressure']} hPa",
             Icons.compress,
             const Color(0xFF95E1D3),
           ),
@@ -309,7 +331,7 @@ class _HomePageState extends State<HomePage>
         Expanded(
           child: _buildInfoCard(
             "Rain",
-            "5 mm",
+            weatherData[0]['isRaining'] == 0 ? "No Rain" : "Raining",
             Icons.umbrella,
             const Color(0xFF6C5CE7),
           ),
@@ -429,30 +451,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  List<dynamic> weatherData2 = [
-    {
-      'date': '2024-05-08',
-      'maxTemp': 28,
-      'minTemp': 20,
-      'rain': 5,
-      'humidity': 60,
-    },
-    {
-      'date': '2024-05-09',
-      'maxTemp': 27,
-      'minTemp': 19,
-      'rain': 2,
-      'humidity': 55,
-    },
-    {
-      'date': '2024-05-10',
-      'maxTemp': 29,
-      'minTemp': 21,
-      'rain': 0,
-      'humidity': 50,
-    },
-  ];
-
   Widget _buildSevenDayForecastTable() {
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -525,7 +523,7 @@ class _HomePageState extends State<HomePage>
                 ),
                 DataColumn(
                   label: Text(
-                    'Rain',
+                    'Conditions',
                     style: TextStyle(
                       color: Colors.black87,
                       fontSize: 14,
@@ -534,7 +532,7 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ],
-              rows: weatherData2.map<DataRow>((record) {
+              rows: weatherForecastData.map<DataRow>((record) {
                 return DataRow(
                   cells: [
                     DataCell(Text(
@@ -542,15 +540,15 @@ class _HomePageState extends State<HomePage>
                       style: const TextStyle(color: Colors.black87),
                     )),
                     DataCell(Text(
-                      '${record['maxTemp']}°C',
+                      '${record['tempmax']}°C',
                       style: const TextStyle(color: Colors.black87),
                     )),
                     DataCell(Text(
-                      '${record['minTemp']}°C',
+                      '${record['tempmin']}°C',
                       style: const TextStyle(color: Colors.black87),
                     )),
                     DataCell(Text(
-                      '${record['rain']} mm',
+                      '${record['conditions']}',
                       style: const TextStyle(color: Colors.black87),
                     )),
                   ],
