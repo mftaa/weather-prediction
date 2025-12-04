@@ -1,2 +1,2 @@
 String myUsername = "";
-String myDomain = "http://127.0.0.1:8000";
+String myDomain = "http://10.252.206.210:8000";

@@ -15,10 +15,11 @@ import uvicorn
 from datetime import datetime, timedelta
 
 db_config = {
-    'host': 'localhost',
+    'host': '127.0.0.1',
     'user': 'root',
     'passwd': '',
     'db': 'weather_app_bd',
+    'port': 3306,
 }
 
 
@@ -30,7 +31,11 @@ class User(BaseModel):
     otp: int
 
 
-conn = MySQLdb.connect(**db_config)
+# Create connection per request to avoid stale connections and "Commands out of sync" errors
+def get_db_connection():
+    return MySQLdb.connect(**db_config)
+
+
 app = FastAPI()
 
 # CORS middleware
@@ -92,15 +97,20 @@ async def generate_otp(email: str):
     asyncio.create_task(remove_otp(email))
     send_email("User Verification", f"Your OTP is: {otp}", email)
     print(f"OTP for {email} is: {otp}")
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
-    query = "UPDATE otp SET otp=%s, createAt=CURRENT_TIMESTAMP WHERE email=%s"
-    cursor.execute(query, (otp, email))
-    affectedRows = cursor.rowcount
-    if affectedRows == 0:
-        query = "INSERT INTO otp(email, otp) VALUES (%s, %s)"
-        cursor.execute(query, (email, otp))
-    conn.commit()
-    cursor.close()
+    try:
+        query = "UPDATE otp SET otp=%s, createAt=CURRENT_TIMESTAMP WHERE email=%s"
+        cursor.execute(query, (otp, email))
+        affectedRows = cursor.rowcount
+        if affectedRows == 0:
+            query = "INSERT INTO otp(email, otp) VALUES (%s, %s)"
+            cursor.execute(query, (email, otp))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
 
     return {"message": "OTP generated successfully."}
 
@@ -116,37 +126,42 @@ async def options_users():
 @app.post("/users/")
 def create_user(user: User):
     hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
+    
+    try:
+        print(user)
+        query = "SELECT otp FROM otp WHERE email=%s"
+        cursor.execute(query, (user.email,))
+        row = cursor.fetchone()
+        prevOtp = row[0]
+        print(f'prevOtp: {prevOtp}')
 
-    print(user)
-    query = "SELECT otp FROM otp WHERE email=%s"
-    cursor.execute(query, (user.email,))
-    row = cursor.fetchone()
-    prevOtp = row[0]
-    print(f'prevOtp: {prevOtp}')
+        msg = ''
+        status = ''
+        if prevOtp == user.otp:
+            print("OTP matched")
+            query = "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (user.username, hashed_password, user.email, user.role))
+            status = 200
+            msg = "User created successfully"
+        else:
+            print("OTP not matched")
+            status = 403
+            msg = "Otp not matched"
 
-    msg = ''
-    status = ''
-    if prevOtp == user.otp:
-        print("OTP matched")
-        query = "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s)"
-        cursor.execute(query, (user.username, hashed_password, user.email, user.role))
-        status = 200
-        msg = "User created successfully"
-    else:
-        print("OTP not matched")
-        status = 403
-        msg = "Otp not matched"
+        print(f'msg: {msg}')
+        print(f'status: {status}')
 
-    print(f'msg: {msg}')
-    print(f'status: {status}')
-
-    conn.commit()
-    cursor.close()
-    return {
-        'status': status,
-        'msg': msg
-    }
+        conn.commit()
+        return {
+            'status': status,
+            'msg': msg
+        }
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # ...User related
@@ -157,16 +172,18 @@ class Login(BaseModel):
 
 @app.post("/login/")
 async def login(user: Login):
-    conn = MySQLdb.connect(**db_config)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT password FROM users WHERE username = %s", (user.username,))
-    db_user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if db_user and bcrypt.checkpw(user.password.encode(), db_user[0].encode()):
-        return {"message": "Login successful"}
-    else:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+    try:
+        cursor.execute("SELECT password FROM users WHERE username = %s", (user.username,))
+        db_user = cursor.fetchone()
+        if db_user and bcrypt.checkpw(user.password.encode(), db_user[0].encode()):
+            return {"message": "Login successful"}
+        else:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # *******
@@ -176,22 +193,26 @@ async def login(user: Login):
 @app.get("/userInfo")
 def getUserInfo(username: str = None):
     username = username if username is not None else 0
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
-    query = "SELECT username, email FROM users WHERE username=%s"
-    cursor.execute(query, (username,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.commit()
+    try:
+        query = "SELECT username, email FROM users WHERE username=%s"
+        cursor.execute(query, (username,))
+        row = cursor.fetchone()
+        
+        print(row);
 
-    print(row);
-
-    if row:
-        return {
-            "username": row[0],
-            "email": row[1],
-        }
-    else:
-        return {}
+        if row:
+            return {
+                "username": row[0],
+                "email": row[1],
+            }
+        else:
+            return {}
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # *******
@@ -201,27 +222,31 @@ def getUserInfo(username: str = None):
 @app.get("/weather-data/get/last")
 def getLastWeatherData(location: str = None):
     location = location if location is not None else 0
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
-    query = "SELECT * FROM weather_data WHERE location=%s ORDER BY id DESC LIMIT 1"
-    cursor.execute(query, (location,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.commit()
+    try:
+        query = "SELECT * FROM weather_data WHERE location=%s ORDER BY id DESC LIMIT 1"
+        cursor.execute(query, (location,))
+        row = cursor.fetchone()
+        
+        print(row);
 
-    print(row);
-
-    if row:
-        return {
-            "id": row[0],
-            "temp": row[1],
-            "humidity": row[2],
-            "isRaining": row[3],
-            "lightIntensity": row[4],
-            "windSpeed": row[5],
-            "airPressure": row[6],
-        }
-    else:
-        return {}
+        if row:
+            return {
+                "id": row[0],
+                "temp": row[1],
+                "humidity": row[2],
+                "isRaining": row[3],
+                "lightIntensity": row[4],
+                "windSpeed": row[5],
+                "airPressure": row[6],
+            }
+        else:
+            return {}
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # *******
@@ -305,18 +330,21 @@ def getPredictedWeatherData(day: int = None, month: int = None, year: int = None
 # Internal access: http://127.0.0.1:8000/weather-data/line-chart
 @app.get("/weather-data/line-chart")
 def getLineChartData():
+    conn = get_db_connection()
     cursor = conn.cursor()
-    query = "SELECT windSpeed FROM weather_data WHERE location=%s ORDER BY id DESC LIMIT 10"
-    cursor.execute(query, ("Gazipur",))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.commit()
+    try:
+        query = "SELECT windSpeed FROM weather_data WHERE location=%s ORDER BY id DESC LIMIT 10"
+        cursor.execute(query, ("Gazipur",))
+        rows = cursor.fetchall()
 
-    ws = [];
-    for row in rows:
-        ws.append(row[0]);
+        ws = [];
+        for row in rows:
+            ws.append(row[0]);
 
-    return ws
+        return ws
+    finally:
+        cursor.close()
+        conn.close()
 
 # *******
 
@@ -329,36 +357,41 @@ class User2(BaseModel):
 def forgotPassword(user: User2):
     print(user)
     hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
+    
+    try:
+        query = "SELECT otp FROM otp WHERE email=%s"
+        cursor.execute(query, (user.email,))
+        row = cursor.fetchone()
+        prevOtp = row[0]
+        print(f'prevOtp: {prevOtp}')
 
-    query = "SELECT otp FROM otp WHERE email=%s"
-    cursor.execute(query, (user.email,))
-    row = cursor.fetchone()
-    prevOtp = row[0]
-    print(f'prevOtp: {prevOtp}')
+        msg = ''
+        status = ''
+        if prevOtp == user.otp:
+            print("OTP matched")
+            query = "UPDATE users SET password=%s WHERE email=%s"
+            cursor.execute(query, (hashed_password, user.email))
+            status = 200
+            msg = "Password updated successfully"
+        else:
+            print("OTP not matched")
+            status = 403
+            msg = "Otp not matched"
 
-    msg = ''
-    status = ''
-    if prevOtp == user.otp:
-        print("OTP matched")
-        query = "UPDATE users SET password=%s WHERE email=%s"
-        cursor.execute(query, (hashed_password, user.email))
-        status = 200
-        msg = "Password updated successfully"
-    else:
-        print("OTP not matched")
-        status = 403
-        msg = "Otp not matched"
+        print(f'msg: {msg}')
+        print(f'status: {status}')
 
-    print(f'msg: {msg}')
-    print(f'status: {status}')
-
-    conn.commit()
-    cursor.close()
-    return {
-        'status': status,
-        'msg': msg
-    }
+        conn.commit()
+        return {
+            'status': status,
+            'msg': msg
+        }
+    finally:
+        cursor.close()
+        conn.close()
 
 # *******
 
@@ -379,16 +412,20 @@ def newWeatherData(
     windSpeed = windSpeed if windSpeed is not None else 0
     pressure = pressure if pressure is not None else 0
 
+    conn = get_db_connection()
     cursor = conn.cursor()
-    query = "INSERT INTO weather_data(temp, humidity, isRaining, lightIntensity, windSpeed, airPressure) VALUES (%s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (temp, humidity, isRaining, lightIntensity, windSpeed, pressure))
-    affectedRows = cursor.rowcount
-    cursor.close()
-    conn.commit()
-    if affectedRows == 1:
-        return {"status": 200}
-    else:
-        return {"status": 403}
+    try:
+        query = "INSERT INTO weather_data(temp, humidity, isRaining, lightIntensity, windSpeed, airPressure) VALUES (%s, %s, %s, %s, %s, %s)"
+        cursor.execute(query, (temp, humidity, isRaining, lightIntensity, windSpeed, pressure))
+        affectedRows = cursor.rowcount
+        conn.commit()
+        if affectedRows == 1:
+            return {"status": 200}
+        else:
+            return {"status": 403}
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

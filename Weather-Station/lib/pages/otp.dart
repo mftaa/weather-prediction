@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'variables.dart';
 
 class OtpPage extends StatelessWidget {
   const OtpPage({super.key});
@@ -11,7 +12,7 @@ class OtpPage extends StatelessWidget {
 
     Future<void> sendOTP(String email) async {
       try {
-        final Uri url = Uri.parse('http://127.0.0.1:8000/generate_otp/?email=$email');
+        final Uri url = Uri.parse('$myDomain/generate_otp/?email=$email');
         final http.Response response = await http.get(url);
 
         if (response.statusCode == 200) {
