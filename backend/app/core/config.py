@@ -13,7 +13,7 @@ class Settings:
     API_DESCRIPTION: str = "API for weather prediction using AI/ML models"
     
     # Server Settings
-    HOST: str = "192.168.110.129"
+    HOST: str = "0.0.0.0"  # Listen on all interfaces
     PORT: int = 8000
     
     # Database Settings

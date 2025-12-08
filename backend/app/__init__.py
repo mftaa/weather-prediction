@@ -14,13 +14,60 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI: Configured application instance
     """
+    # API metadata
+    description = """
+## 🌦️ Weather Prediction API
+
+AI-powered weather forecasting system using Machine Learning.
+
+### 🚀 Features
+
+* **🔐 User Authentication** - Secure registration and login with OTP verification
+* **🌡️ Weather Data Management** - Real-time weather data storage and retrieval
+* **🤖 AI Predictions** - Machine learning-based weather forecasting
+  * Hourly predictions (1-168 hours)
+  * Daily predictions (1-30 days)
+* **📊 Model Information** - Get details about the trained AI model
+
+### 🧠 AI Model
+
+* **Type**: Random Forest Ensemble
+* **Version**: v4 Combined Model
+* **Training Data**: Historical weather data from 2000-2024
+* **Predictions**: Temperature, Humidity, Wind Speed, Pressure, Conditions
+
+### 📚 API Documentation
+
+* **Swagger UI**: `/docs` (this page)
+* **ReDoc**: `/redoc` (alternative documentation)
+
+### 🔗 Quick Links
+
+* [GitHub Repository](https://github.com/mftaa/weather-prediction)
+* [Model Training Notebook](../ml-models/model_training.ipynb)
+    """
+    
     # Create FastAPI app
     app = FastAPI(
-        title=settings.API_TITLE,
+        title="🌤️ " + settings.API_TITLE,
         version=settings.API_VERSION,
-        description=settings.API_DESCRIPTION,
+        description=description,
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
+        openapi_tags=[
+            {
+                "name": "Authentication",
+                "description": "User registration, login, and OTP verification"
+            },
+            {
+                "name": "Weather Data",
+                "description": "Manage weather data and historical records"
+            },
+            {
+                "name": "AI Prediction",
+                "description": "🤖 AI-powered weather forecasting for hourly and daily predictions"
+            }
+        ]
     )
     
     # Configure CORS

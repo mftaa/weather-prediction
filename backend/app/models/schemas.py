@@ -65,18 +65,41 @@ class WeatherDataResponse(BaseModel):
 # ============== AI Prediction Models ==============
 class HourlyPredictionRequest(BaseModel):
     """Request model untuk prediksi cuaca per jam"""
-    day: int = Field(..., ge=1, le=31)
-    month: int = Field(..., ge=1, le=12)
-    year: int = Field(..., ge=2000)
-    hour: int = Field(default=0, ge=0, le=23)
-    num_hours: int = Field(default=24, ge=1, le=168)  # Max 1 week
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "day": 8,
+                "month": 12,
+                "year": 2025,
+                "hour": 14,
+                "num_hours": 24
+            }]
+        }
+    }
+    
+    day: int = Field(..., ge=1, le=31, description="Day of month (1-31)")
+    month: int = Field(..., ge=1, le=12, description="Month (1-12)")
+    year: int = Field(..., ge=2000, description="Year (e.g., 2025)")
+    hour: int = Field(default=0, ge=0, le=23, description="Starting hour (0-23)")
+    num_hours: int = Field(default=24, ge=1, le=168, description="Number of hours to predict (1-168)")
 
 class DailyPredictionRequest(BaseModel):
     """Request model untuk prediksi cuaca harian"""
-    day: int = Field(..., ge=1, le=31)
-    month: int = Field(..., ge=1, le=12)
-    year: int = Field(..., ge=2000)
-    num_days: int = Field(default=3, ge=1, le=30)  # Max 30 days
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "day": 8,
+                "month": 12,
+                "year": 2025,
+                "num_days": 7
+            }]
+        }
+    }
+    
+    day: int = Field(..., ge=1, le=31, description="Starting day of month (1-31)")
+    month: int = Field(..., ge=1, le=12, description="Month (1-12)")
+    year: int = Field(..., ge=2000, description="Year (e.g., 2025)")
+    num_days: int = Field(default=3, ge=1, le=30, description="Number of days to predict (1-30)")
 
 class HourlyPredictionData(BaseModel):
     """Single hourly prediction data"""
@@ -101,6 +124,8 @@ class DailyPredictionData(BaseModel):
 
 class PredictionResponse(BaseModel):
     """Generic prediction response"""
+    model_config = {"protected_namespaces": ()}
+    
     status: int
     message: str
     model_version: str
@@ -108,6 +133,8 @@ class PredictionResponse(BaseModel):
 
 class ModelInfoResponse(BaseModel):
     """AI Model information response"""
+    model_config = {"protected_namespaces": ()}
+    
     status: int
     model_loaded: bool
     version: Optional[str] = None
