@@ -6,7 +6,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Navigate to login page on logout
-    void _logout() {
+    void logout() {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
 
@@ -19,7 +19,7 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 24),
           _buildProfileMenu(context),
           const SizedBox(height: 24),
-          _buildLogoutButton(context, _logout),
+          _buildLogoutButton(context, logout),
         ],
       ),
     );

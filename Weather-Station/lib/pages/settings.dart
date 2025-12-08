@@ -86,7 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
         onChanged: (value) {
           themeProvider.toggleTheme(value);
         },
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeThumbColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

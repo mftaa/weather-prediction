@@ -182,86 +182,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: _loadData,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SafeArea(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      children: <Widget>[
-                        const SizedBox(height: 8.0),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: TextField(
-                            controller: searchController,
-                            style: const TextStyle(color: Colors.black87),
-                            decoration: InputDecoration(
-                              hintText: 'Search for cities',
-                              hintStyle: TextStyle(color: Colors.grey[600]),
-                              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                            ),
-                            onChanged: (value) {
-                              // Handle search logic here
-                            },
-                          ),
-                        ),
-                const SizedBox(height: 8.0),
-                if (weatherData.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    color: Colors.black.withOpacity(0.0),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildInfoBox("Temperature", '${weatherData[0]['temp']}',
-                            Icons.thermostat),
-                        const SizedBox(width: 8.0),
-                        _buildInfoBox("Humidity",
-                            "${weatherData[0]['humidity']}%", Icons.opacity),
-                        const SizedBox(width: 8.0),
-                        _buildInfoBox(
-                            "Light Intensity",
-                            "${weatherData[0]['lightIntensity']} Lux",
-                            Icons.lightbulb),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 8.0),
-                if (weatherData.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    color: Colors.black.withOpacity(0.0),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildInfoBox("Air Pressure", "1012 hPa", Icons.compress),
-                        const SizedBox(width: 8.0),
-                        _buildInfoBox(
-                            "Wind Speed",
-                            "${weatherData[0]['windSpeed']} m/s",
-                            Icons.wind_power),
-                        const SizedBox(width: 8.0),
-                        _buildInfoBox("Rain", "5 mm", Icons.beach_access),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 8.0),
-                _buildCircularSummary(),
-                const SizedBox(height: 16.0),
-                _buildSevenDayForecastTable(),
-              ],
-            ),
-          ],
-        ),
-      ),
       resizeToAvoidBottomInset: false,
       drawer: Drawer(
         child: ListView(
@@ -406,6 +326,86 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SafeArea(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      children: <Widget>[
+                        const SizedBox(height: 8.0),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: TextField(
+                            controller: searchController,
+                            style: const TextStyle(color: Colors.black87),
+                            decoration: InputDecoration(
+                              hintText: 'Search for cities',
+                              hintStyle: TextStyle(color: Colors.grey[600]),
+                              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                            onChanged: (value) {
+                              // Handle search logic here
+                            },
+                          ),
+                        ),
+                const SizedBox(height: 8.0),
+                if (weatherData.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                    color: Colors.black.withOpacity(0.0),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildInfoBox("Temperature", '${weatherData[0]['temp']}',
+                            Icons.thermostat),
+                        const SizedBox(width: 8.0),
+                        _buildInfoBox("Humidity",
+                            "${weatherData[0]['humidity']}%", Icons.opacity),
+                        const SizedBox(width: 8.0),
+                        _buildInfoBox(
+                            "Light Intensity",
+                            "${weatherData[0]['lightIntensity']} Lux",
+                            Icons.lightbulb),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 8.0),
+                if (weatherData.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                    color: Colors.black.withOpacity(0.0),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildInfoBox("Air Pressure", "1012 hPa", Icons.compress),
+                        const SizedBox(width: 8.0),
+                        _buildInfoBox(
+                            "Wind Speed",
+                            "${weatherData[0]['windSpeed']} m/s",
+                            Icons.wind_power),
+                        const SizedBox(width: 8.0),
+                        _buildInfoBox("Rain", "5 mm", Icons.beach_access),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 8.0),
+                _buildCircularSummary(),
+                const SizedBox(height: 16.0),
+                _buildSevenDayForecastTable(),
+              ],
             ),
           ],
         ),

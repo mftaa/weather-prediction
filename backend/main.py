@@ -5,7 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from fastapi.middleware.cors import CORSMiddleware
-import MySQLdb
+import mysql.connector as MySQLdb
 from pydantic import BaseModel
 import bcrypt
 import numpy as np

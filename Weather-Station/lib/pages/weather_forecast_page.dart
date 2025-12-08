@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/ai_prediction_service.dart';
 
 class WeatherForecastPage extends StatefulWidget {
-  const WeatherForecastPage({Key? key}) : super(key: key);
+  const WeatherForecastPage({super.key});
 
   @override
   State<WeatherForecastPage> createState() => _WeatherForecastPageState();
@@ -42,13 +42,13 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     try {
       // Calculate number of days
       final int daysDiff = _selectedEndDate.difference(_selectedStartDate).inDays + 1;
-      
+
       // Generate forecast for each day
       List<Map<String, dynamic>> allForecasts = [];
-      
+
       for (int i = 0; i < daysDiff; i++) {
         final targetDate = _selectedStartDate.add(Duration(days: i));
-        
+
         try {
           final result = await AIPredictionService.predictDaily(
             day: targetDate.day,

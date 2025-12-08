@@ -525,7 +525,7 @@ class _HomePageContentState extends State<HomePageContent>
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingRowColor: MaterialStateProperty.all(
+              headingRowColor: WidgetStateProperty.all(
                 theme.colorScheme.primary.withOpacity(0.1),
               ),
               columns: [

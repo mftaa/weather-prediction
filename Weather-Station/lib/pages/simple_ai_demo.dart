@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/ai_prediction_service.dart';
 
 class SimpleAIPredictionDemo extends StatefulWidget {
-  const SimpleAIPredictionDemo({Key? key}) : super(key: key);
+  const SimpleAIPredictionDemo({super.key});
 
   @override
   State<SimpleAIPredictionDemo> createState() => _SimpleAIPredictionDemoState();
@@ -85,9 +85,9 @@ class _SimpleAIPredictionDemoState extends State<SimpleAIPredictionDemo> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             if (_loading)
               const Center(child: CircularProgressIndicator())
             else
@@ -116,7 +116,7 @@ class _SimpleAIPredictionDemoState extends State<SimpleAIPredictionDemo> {
                         ),
                         const SizedBox(height: 20),
                       ],
-                      
+
                       // Hourly Results
                       if (_hourlyData != null) ...[
                         const Text(
