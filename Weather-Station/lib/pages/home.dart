@@ -255,6 +255,8 @@ class _HomePageContentState extends State<HomePageContent>
                   children: <Widget>[
                     const SizedBox(height: 8.0),
                     _buildSearchBar(context),
+                    const SizedBox(height: 16.0),
+                    _buildAIDemoButton(context),
                     const SizedBox(height: 20.0),
                     if (weatherData.isNotEmpty) _buildWeatherRow1(context),
                     const SizedBox(height: 16.0),
@@ -550,6 +552,52 @@ class _HomePageContentState extends State<HomePageContent>
                   ],
                 );
               }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIDemoButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        children: [
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/forecast');
+            },
+            icon: const Icon(Icons.calendar_view_week),
+            label: const Text('Weather Forecast (Date Range)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/ai-demo');
+            },
+            icon: const Icon(Icons.psychology),
+            label: const Text('AI Prediction Demo (Testing)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              minimumSize: const Size(double.infinity, 45),
             ),
           ),
         ],

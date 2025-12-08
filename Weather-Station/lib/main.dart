@@ -6,6 +6,8 @@ import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/profile.dart';
 import 'pages/otp.dart';
+import 'pages/simple_ai_demo.dart';
+import 'pages/weather_forecast_page.dart';
 import 'utility/theme_provider.dart';
 
 void main() {
@@ -47,6 +49,8 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => const SettingsPage(),
         '/profile': (context) => const ProfilePage(),
         '/otp': (context) => const OtpPage(),
+        '/ai-demo': (context) => const SimpleAIPredictionDemo(),
+        '/forecast': (context) => const WeatherForecastPage(),
       },
     );
   }
