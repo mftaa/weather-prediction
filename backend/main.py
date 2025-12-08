@@ -469,7 +469,7 @@ class HourlyPredictionRequest(BaseModel):
 def predict_hourly_weather(request: HourlyPredictionRequest):
     """
     Prediksi cuaca per jam menggunakan model AI
-    
+
     Request:
     {
         "day": 8,
@@ -481,18 +481,18 @@ def predict_hourly_weather(request: HourlyPredictionRequest):
     """
     if ai_model is None:
         raise HTTPException(status_code=500, detail="AI Model tidak berhasil dimuat")
-    
+
     try:
         # Validasi input
         if not (1 <= request.day <= 31 and 1 <= request.month <= 12 and request.year >= 2000):
             raise HTTPException(status_code=400, detail="Input tanggal tidak valid")
-        
+
         # Buat datetime awal
         start_date = datetime(request.year, request.month, request.day, request.hour or 0)
-        
+
         # Generate datetime untuk jumlah jam yang diminta
         future_dates = [start_date + timedelta(hours=i) for i in range(request.num_hours)]
-        
+
         # Buat input DataFrame
         X_input = pd.DataFrame({
             'day': [d.day for d in future_dates],
@@ -500,49 +500,49 @@ def predict_hourly_weather(request: HourlyPredictionRequest):
             'year': [d.year for d in future_dates],
             'hour': [d.hour for d in future_dates]
         })
-        
+
         # Pastikan urutan kolom sesuai
         hourly_features = ai_model['hourly']['feature_columns']
         X_input = X_input[hourly_features]
-        
+
         # Lakukan prediksi
         h_reg = ai_model['hourly']['regressor']
         h_clf = ai_model['hourly']['classifier']
-        
+
         # Prediksi nilai numerik
         pred_reg = h_reg.predict(X_input)
-        
+
         # Prediksi kondisi (encoded)
         pred_clf_encoded = h_clf.predict(X_input)
-        
+
         # Decode kondisi
         label_encoder = ai_model['label_encoder_hourly']
         pred_conditions = label_encoder.inverse_transform(pred_clf_encoded.astype(int))
-        
+
         # Format hasil
         results = []
         target_cols = ai_model['hourly']['target_regression']
-        
+
         for i, future_date in enumerate(future_dates):
             result = {
                 'datetime': future_date.isoformat(),
                 'date_formatted': future_date.strftime('%Y-%m-%d %H:%M'),
                 'conditions': str(pred_conditions[i]),
             }
-            
+
             # Tambahkan nilai prediksi numerik
             for j, col in enumerate(target_cols):
                 result[col] = float(round(pred_reg[i][j], 2))
-            
+
             results.append(result)
-        
+
         return {
             'status': 200,
             'message': 'Prediksi hourly berhasil',
             'model_version': ai_model.get('version', 'unknown'),
             'data': results
         }
-    
+
     except Exception as e:
         print(f"Error dalam prediksi hourly: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error prediksi: {str(e)}")
@@ -552,7 +552,7 @@ def predict_hourly_weather(request: HourlyPredictionRequest):
 def predict_daily_weather(request: DailyPredictionRequest):
     """
     Prediksi cuaca harian menggunakan model AI
-    
+
     Request:
     {
         "day": 8,
@@ -563,66 +563,66 @@ def predict_daily_weather(request: DailyPredictionRequest):
     """
     if ai_model is None:
         raise HTTPException(status_code=500, detail="AI Model tidak berhasil dimuat")
-    
+
     try:
         # Validasi input
         if not (1 <= request.day <= 31 and 1 <= request.month <= 12 and request.year >= 2000):
             raise HTTPException(status_code=400, detail="Input tanggal tidak valid")
-        
+
         # Buat datetime awal
         start_date = datetime(request.year, request.month, request.day)
-        
+
         # Generate datetime untuk jumlah hari yang diminta
         future_dates = [start_date + timedelta(days=i) for i in range(request.num_days)]
-        
+
         # Buat input DataFrame
         X_input = pd.DataFrame({
             'day': [d.day for d in future_dates],
             'month': [d.month for d in future_dates],
             'year': [d.year for d in future_dates],
         })
-        
+
         # Pastikan urutan kolom sesuai
         daily_features = ai_model['daily']['feature_columns']
         X_input = X_input[daily_features]
-        
+
         # Lakukan prediksi
         d_reg = ai_model['daily']['regressor']
         d_clf = ai_model['daily']['classifier']
-        
+
         # Prediksi nilai numerik
         pred_reg = d_reg.predict(X_input)
-        
+
         # Prediksi kondisi (encoded)
         pred_clf_encoded = d_clf.predict(X_input)
-        
+
         # Decode kondisi
         label_encoder = ai_model['label_encoder_daily']
         pred_conditions = label_encoder.inverse_transform(pred_clf_encoded.astype(int))
-        
+
         # Format hasil
         results = []
         target_cols = ai_model['daily']['target_regression']
-        
+
         for i, future_date in enumerate(future_dates):
             result = {
                 'date': future_date.strftime('%Y-%m-%d'),
                 'conditions': str(pred_conditions[i]),
             }
-            
+
             # Tambahkan nilai prediksi numerik
             for j, col in enumerate(target_cols):
                 result[col] = float(round(pred_reg[i][j], 2))
-            
+
             results.append(result)
-        
+
         return {
             'status': 200,
             'message': 'Prediksi daily berhasil',
             'model_version': ai_model.get('version', 'unknown'),
             'data': results
         }
-    
+
     except Exception as e:
         print(f"Error dalam prediksi daily: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error prediksi: {str(e)}")
@@ -637,7 +637,7 @@ def get_model_info():
             'message': 'Model tidak dimuat',
             'model_loaded': False
         }
-    
+
     return {
         'status': 200,
         'model_loaded': True,
@@ -652,4 +652,4 @@ def get_model_info():
 # ============================================
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.110.129", port=8000)
+    uvicorn.run(app, host="10.252.206.210", port=8000)
