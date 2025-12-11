@@ -13,6 +13,7 @@ class HomePageNew extends StatefulWidget {
 
 class _HomePageNewState extends State<HomePageNew> {
   bool _isLoading = true;
+  Map<String, dynamic>? _currentWeather;
   List<dynamic> _hourlyForecast = [];
   List<dynamic> _dailyForecast = [];
   String _location = "Semarang"; // Default location

@@ -8,8 +8,14 @@ import 'pages/profile.dart';
 import 'pages/otp.dart';
 import 'pages/weather_forecast_page.dart';
 import 'utility/theme_provider.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final notificationService = NotificationService();
+  await notificationService.init();
+  await notificationService.requestPermissions();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
@@ -132,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 40),
                 child: Text(
-                  'Lorem ipsum is simply dummy text of the printing and typesetting standard text over the 1500s',
+                  'Dapatkan prakiraan cuaca terkini, notifikasi hujan, dan informasi cuaca penting untuk aktivitas Anda.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,

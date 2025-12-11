@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'variables.dart'; // Pastikan import ini ada untuk akses variabel myDomain
+import '../services/notification_service.dart';
 
 class WeatherForecastPage extends StatefulWidget {
   const WeatherForecastPage({super.key});
@@ -114,6 +115,20 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         setState(() {
           _forecastData = parsedForecasts;
         });
+
+        // Check for rain in the first forecast item (Today/Tomorrow)
+        if (parsedForecasts.isNotEmpty) {
+          final firstForecast = parsedForecasts[0];
+          final condition = (firstForecast['conditions'] as String).toLowerCase();
+          if (condition.contains('rain') || 
+              condition.contains('shower') || 
+              condition.contains('thunder')) {
+            NotificationService().showRainAlert(
+              'Rain Alert',
+              'Rain is predicted for ${DateFormat('EEEE').format(firstForecast['date'])}. Prepare your umbrella!',
+            );
+          }
+        }
       } else {
         throw Exception('Failed to load forecast: ${response.statusCode}');
       }

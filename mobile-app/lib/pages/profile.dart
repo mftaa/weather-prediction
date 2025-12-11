@@ -101,7 +101,7 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 15),
           const Text(
-            'Mamur Sayor',
+            'Kelompok 3',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -110,7 +110,7 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            '1901029@iot.bdu.ac.bd',
+            'kel3IOT@polines.ac.id',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withOpacity(0.8),
