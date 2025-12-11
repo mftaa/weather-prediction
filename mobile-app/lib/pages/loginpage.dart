@@ -23,11 +23,12 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
+    // Simpan username ke variabel global (dari variables.dart)
     myUsername = _emailController.text;
 
     try {
       final response = await http.post(
-        Uri.parse('$myDomain/auth/login'), // Your API endpoint
+        Uri.parse('$myDomain/auth/login'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -65,11 +66,12 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Error"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Oops!", style: TextStyle(color: Colors.redAccent)),
           content: Text(message),
           actions: [
             TextButton(
-              child: const Text("Close"),
+              child: const Text("Try Again", style: TextStyle(color: Color(0xFF5B9FE3))),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -82,75 +84,112 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.surface,
-                theme.colorScheme.background,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF5B9FE3), // Warna Biru Utama (Atas)
+              Color(0xFF7AB8F5),
+              Color(0xFFB8D4F0), // Warna Biru Muda (Bawah)
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(flex: 2),
-                _buildHeader(theme),
-                const SizedBox(height: 48.0),
-                _buildTextField(
-                  controller: _emailController,
-                  labelText: "Username",
-                  prefixIcon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16.0),
-                _buildTextField(
-                  controller: _passwordController,
-                  labelText: "Password",
-                  prefixIcon: Icons.lock_outline,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 32.0),
-                _buildLoginButton(),
-                const SizedBox(height: 24.0),
-                _buildRegisterLink(),
-                const Spacer(flex: 3),
-              ],
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // HEADER: LOGO & WELCOME TEXT
+                  const Icon(
+                    Icons.cloud_circle_rounded, // Icon yang lebih modern
+                    size: 100,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Weather Station",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Sign in to continue",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+
+                  // CARD PUTIH UNTUK FORM
+                  Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          "Login",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 30),
+                        
+                        _buildTextField(
+                          controller: _emailController,
+                          labelText: "Username",
+                          prefixIcon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        _buildTextField(
+                          controller: _passwordController,
+                          labelText: "Password",
+                          prefixIcon: Icons.lock_outline,
+                          isPassword: true,
+                        ),
+                        
+                        const SizedBox(height: 30),
+                        
+                        _buildLoginButton(),
+                        
+                        const SizedBox(height: 20),
+                        _buildRegisterLink(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader(ThemeData theme) {
-    return Column(
-      children: [
-        Icon(
-          Icons.cloudy_snowing,
-          size: 80,
-          color: theme.colorScheme.primary,
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "Welcome Back!",
-          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Sign in to your weather station",
-          style: TextStyle(fontSize: 16, color: theme.hintColor),
-        ),
-      ],
     );
   }
 
@@ -160,19 +199,21 @@ class _LoginPageState extends State<LoginPage> {
     required IconData prefixIcon,
     bool isPassword = false,
   }) {
-    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       obscureText: isPassword ? _isPasswordObscured : false,
+      style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         labelText: labelText,
-        prefixIcon: Icon(prefixIcon, color: theme.colorScheme.primary),
+        labelStyle: TextStyle(color: Colors.grey[600]),
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF5B9FE3)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   _isPasswordObscured
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
+                  color: Colors.grey[400],
                 ),
                 onPressed: () {
                   setState(() {
@@ -182,58 +223,65 @@ class _LoginPageState extends State<LoginPage> {
               )
             : null,
         filled: true,
-        fillColor: theme.inputDecorationTheme.fillColor,
+        fillColor: const Color(0xFFF5F6FA), // Warna abu sangat muda
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(15.0),
           borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15.0),
+          borderSide: const BorderSide(color: Color(0xFF5B9FE3), width: 1.5),
         ),
       ),
     );
   }
 
   Widget _buildLoginButton() {
-    final theme = Theme.of(context);
     return SizedBox(
-      height: 50,
+      height: 55,
       child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B9FE3)))
           : ElevatedButton(
               onPressed: _login,
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                backgroundColor: const Color(0xFF5B9FE3), // Warna utama tema
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(15.0),
                 ),
-                elevation: 5,
-                shadowColor: theme.colorScheme.primary.withOpacity(0.4),
+                shadowColor: const Color(0xFF5B9FE3).withOpacity(0.5),
               ),
               child: const Text(
-                'Login',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                'LOGIN',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
               ),
             ),
     );
   }
 
   Widget _buildRegisterLink() {
-    final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           "Don't have an account? ",
-          style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          style: TextStyle(color: Colors.grey[600]),
         ),
         GestureDetector(
           onTap: () {
             Navigator.pushNamed(context, '/reg');
           },
-          child: Text(
-            'Register here',
+          child: const Text(
+            'Register',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
+              color: Color(0xFF5B9FE3),
             ),
           ),
         ),

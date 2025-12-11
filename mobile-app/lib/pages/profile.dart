@@ -5,105 +5,115 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Navigate to login page on logout
-    void _logout() {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF5B9FE3),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF5B9FE3),
+              Color(0xFF7AB8F5),
+              Color(0xFFB8D4F0),
+            ],
           ),
         ),
-        centerTitle: true,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildProfileCard(),
+                    const SizedBox(height: 20),
+                    _buildMenuCard(context),
+                    const SizedBox(height: 20),
+                    _buildLogoutButton(context),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      // The scaffold background color is now set by the theme in main.dart
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          _buildProfileHeader(context),
-          const SizedBox(height: 24),
-          _buildProfileMenu(context),
-          const SizedBox(height: 24),
-          _buildLogoutButton(context, _logout),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => Navigator.pop(context),
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 44), // To balance the back button
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildProfileCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.secondary,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
       ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.white,
-                child: const CircleAvatar(
-                  radius: 56,
-                  backgroundImage: NetworkImage(
-                    // Placeholder image
-                    'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-                  ),
-                ),
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.white,
+            child: const CircleAvatar(
+              radius: 46,
+              backgroundImage: NetworkImage(
+                'https://i.pravatar.cc/150?u=a042581f4e29026704d',
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: theme.cardColor,
-                  child: Icon(
-                    Icons.camera_alt,
-                    color: theme.colorScheme.primary,
-                    size: 22,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Mamur Sayor',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 15),
+          const Text(
+            'Mamur Sayor',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 5),
           Text(
             '1901029@iot.bdu.ac.bd',
             style: TextStyle(
-              fontSize: 16.0,
-              color: theme.colorScheme.onPrimary.withOpacity(0.8),
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.8),
             ),
           ),
         ],
@@ -111,122 +121,101 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileMenu(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: [
-          _buildMenuCard(
-            context,
-            children: [
-              _buildMenuListTile(
-                context,
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                onTap: () {
-                  // Handle navigation or action
-                },
-              ),
-              _buildMenuListTile(
-                context,
-                icon: Icons.lock_outline,
-                title: 'Change Password',
-                onTap: () {
-                  // Handle navigation or action
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildMenuCard(
-            context,
-            children: [
-              _buildMenuListTile(
-                context,
-                icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                onTap: () {
-                  // Handle navigation or action
-                },
-              ),
-              _buildMenuListTile(
-                context,
-                icon: Icons.language_outlined,
-                title: 'Language',
-                onTap: () {
-                  // Handle navigation or action
-                },
-              ),
-              _buildMenuListTile(
-                context,
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                onTap: () {
-                  // Handle navigation or action
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context, VoidCallback onLogout) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: ElevatedButton.icon(
-        onPressed: onLogout,
-        icon: const Icon(Icons.logout, color: Colors.white),
-        label: const Text(
-          'Logout',
-          style: TextStyle(
-              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.error,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 4,
-          shadowColor: theme.colorScheme.error.withOpacity(0.4),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuCard(BuildContext context,
-      {required List<Widget> children}) {
+  Widget _buildMenuCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          _buildMenuListTile(
+            icon: Icons.person_outline,
+            title: 'Edit Profile',
+            onTap: () {},
+          ),
+          _buildMenuListTile(
+            icon: Icons.lock_outline,
+            title: 'Change Password',
+            onTap: () {},
+          ),
+          _buildMenuListTile(
+            icon: Icons.notifications_outlined,
+            title: 'Notifications',
+            onTap: () {},
+            isLast: true,
           ),
         ],
       ),
-      child: Column(children: children),
     );
   }
 
-  Widget _buildMenuListTile(
-    BuildContext context, {
+  Widget _buildMenuListTile({
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isLast = false,
   }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: theme.hintColor),
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: isLast 
+            ? const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))
+            : BorderRadius.zero,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : Border(bottom: BorderSide(color: Colors.white.withOpacity(0.2))),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      },
+      icon: const Icon(Icons.logout, color: Color(0xFF5B9FE3)),
+      label: const Text(
+        'Logout',
+        style: TextStyle(
+          color: Color(0xFF5B9FE3),
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 55),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 5,
+        shadowColor: Colors.black.withOpacity(0.2),
+      ),
     );
   }
 }

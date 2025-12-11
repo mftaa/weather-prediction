@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../services/ai_prediction_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'variables.dart'; // Pastikan import ini ada untuk akses variabel myDomain
 
 class WeatherForecastPage extends StatefulWidget {
   const WeatherForecastPage({super.key});
@@ -10,15 +12,17 @@ class WeatherForecastPage extends StatefulWidget {
 }
 
 class _WeatherForecastPageState extends State<WeatherForecastPage> {
+  // Default range: Hari ini sampai 6 hari ke depan (Total 7 hari)
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 6));
+  
   List<Map<String, dynamic>> _forecastData = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _generateForecast();
+    _fetchForecastData();
   }
 
   Future<void> _selectDateRange() async {
@@ -33,7 +37,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF5B9FE3),
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -50,54 +54,73 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         _selectedStartDate = picked.start;
         _selectedEndDate = picked.end;
       });
-      _generateForecast();
+      _fetchForecastData();
     }
   }
 
-  Future<void> _generateForecast() async {
+ // --- LOGIC PERBAIKAN: SINGLE REQUEST (BULK DATA) ---
+  Future<void> _fetchForecastData() async {
     setState(() {
       _isLoading = true;
       _forecastData.clear();
     });
 
     try {
-      final int numDays =
-          _selectedEndDate.difference(_selectedStartDate).inDays + 1;
+      // 1. Hitung jumlah hari (num_days) berdasarkan range tanggal yang dipilih
+      final int numDays = _selectedEndDate.difference(_selectedStartDate).inDays + 1;
 
-      final result = await AIPredictionService.predictDaily(
-        day: _selectedStartDate.day,
-        month: _selectedStartDate.month,
-        year: _selectedStartDate.year,
-        numDays: numDays,
+      // 2. Kirim Request Satu Kali Saja
+      final response = await http.post(
+        Uri.parse('$myDomain/ai-prediction/daily'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'day': _selectedStartDate.day,
+          'month': _selectedStartDate.month,
+          'year': _selectedStartDate.year,
+          'num_days': numDays, // Request sejumlah hari sekaligus
+        }),
       );
 
-      if (result['status'] == 200 && result['data'] != null) {
-        final List<dynamic> forecasts = result['data'];
-        final List<Map<String, dynamic>> allForecasts = [];
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        
+        // 3. Ambil array 'data' dari response JSON
+        final List<dynamic> rawDataList = result['data'] ?? [];
+        final List<Map<String, dynamic>> parsedForecasts = [];
 
-        for (var i = 0; i < forecasts.length; i++) {
-          final dayData = forecasts[i];
-          final forecastDate = DateTime.parse(dayData['date']);
+        for (var item in rawDataList) {
+          // Parsing Tanggal dari String "YYYY-MM-DD" ke DateTime
+          // JSON kamu: "date": "2025-12-08"
+          DateTime itemDate;
+          if (item['date'] != null) {
+            itemDate = DateTime.parse(item['date']);
+          } else {
+            itemDate = DateTime.now(); // Fallback
+          }
 
-          allForecasts.add({
-            'date': forecastDate,
-            'conditions': dayData['conditions'] ?? 'Partly Cloudy',
-            'temp_min': dayData['temp_min'] ?? 20.0,
-            'temp_max': dayData['temp_max'] ?? 30.0,
-            'temp_mean': dayData['temp_mean'] ?? 25.0,
-            'humidity_avg': dayData['humidity_avg'] ?? 70.0,
-            'windspeed_avg': dayData['windspeed_avg'] ?? 10.0,
-            'pressure_avg': dayData['pressure_avg'] ?? 1013.0,
+          parsedForecasts.add({
+            'date': itemDate,
+            'conditions': item['conditions'] ?? 'Cloudy',
+            // Parsing angka (handle int/double dengan aman)
+            'temp_min': item['temp_min'] ?? 0,
+            'temp_max': item['temp_max'] ?? 0,
+            'temp_mean': item['temp_mean'] ?? 0,
+            'humidity_avg': item['humidity_avg'] ?? 0,
+            'windspeed_avg': item['windspeed_avg'] ?? 0,
+            'pressure_avg': item['pressure_avg'] ?? 0,
           });
         }
 
         setState(() {
-          _forecastData = allForecasts;
+          _forecastData = parsedForecasts;
         });
+      } else {
+        throw Exception('Failed to load forecast: ${response.statusCode}');
       }
     } catch (e) {
+      print("Error fetching data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Gagal memuat data: $e'), backgroundColor: Colors.red),
       );
     } finally {
       setState(() {
@@ -105,14 +128,13 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
       });
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -129,26 +151,26 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
               _buildHeader(),
               Expanded(
                 child: _isLoading
-                    ? Center(
+                    ? const Center(
                         child: CircularProgressIndicator(color: Colors.white))
                     : RefreshIndicator(
-                        onRefresh: _generateForecast,
+                        onRefresh: _fetchForecastData,
                         child: SingleChildScrollView(
-                          physics: AlwaysScrollableScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 10),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildTomorrowCard(),
-                                SizedBox(height: 15),
+                                const SizedBox(height: 15),
                                 _buildStatsCard(),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 _buildDateRangeSelector(),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 _buildDailyForecastList(),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           ),
@@ -164,7 +186,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Material(
@@ -172,21 +194,32 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () => Navigator.pop(context),
-              child: Padding(
+              child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
               ),
             ),
           ),
-          Expanded(
+          const Expanded(
             child: Center(
-              child: Text(
-                '7-Day Forecasts',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    '7-Day Forecast',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                   Text(
+                    'Semarang', // Lokasi Hardcoded sesuai konteks
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -195,9 +228,9 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: _selectDateRange,
-              child: Padding(
+              child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Icon(Icons.more_vert, color: Colors.white, size: 24),
+                child: Icon(Icons.date_range, color: Colors.white, size: 24),
               ),
             ),
           ),
@@ -207,24 +240,32 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   }
 
   Widget _buildTomorrowCard() {
-    if (_forecastData.isEmpty) return SizedBox.shrink();
+    if (_forecastData.isEmpty) return const SizedBox.shrink();
 
+    // Data index 0 = Hari pertama dalam range (Besok atau Hari ini)
     final forecast = _forecastData[0];
     final date = forecast['date'] as DateTime;
-    final tempMax = (forecast['temp_max'] as num).toStringAsFixed(0);
-    final tempMin = (forecast['temp_min'] as num).toStringAsFixed(0);
+    
+    // Parsing angka agar aman (handle int/double)
+    final rawMax = forecast['temp_max'];
+    final rawMin = forecast['temp_min'];
+    final tempMax = (rawMax is num) ? rawMax.toStringAsFixed(0) : '0';
+    final tempMin = (rawMin is num) ? rawMin.toStringAsFixed(0) : '0';
+    
     final condition = forecast['conditions'] as String;
 
-    String dayLabel = 'Tomorrow';
+    String dayLabel = DateFormat('EEEE').format(date); // Nama hari lengkap
     if (date.day == DateTime.now().day) {
       dayLabel = 'Today';
+    } else if (date.day == DateTime.now().add(const Duration(days: 1)).day) {
+      dayLabel = 'Tomorrow';
     }
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(25),
+      padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -235,9 +276,9 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF4A90E2).withOpacity(0.3),
+            color: const Color(0xFF4A90E2).withOpacity(0.3),
             blurRadius: 15,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -251,7 +292,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,14 +305,14 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                     children: [
                       Text(
                         tempMax,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 72,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           height: 1,
                         ),
                       ),
-                      Text(
+                      const Text(
                         '°',
                         style: TextStyle(
                           fontSize: 36,
@@ -289,7 +330,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     condition,
                     style: TextStyle(
@@ -300,8 +341,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                   ),
                 ],
               ),
-              // Weather Icon
-              Container(
+              SizedBox(
                 width: 100,
                 height: 100,
                 child: Stack(
@@ -336,14 +376,24 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   }
 
   Widget _buildStatsCard() {
-    if (_forecastData.isEmpty) return SizedBox.shrink();
+    if (_forecastData.isEmpty) return const SizedBox.shrink();
 
     final forecast = _forecastData[0];
-    final humidity = (forecast['humidity_avg'] as num).toStringAsFixed(0);
-    final windSpeed = (forecast['windspeed_avg'] as num).toStringAsFixed(0);
+    // Parsing angka agar aman
+    final rawHum = forecast['humidity_avg'];
+    final rawWind = forecast['windspeed_avg'];
+    
+    final humidity = (rawHum is num) ? rawHum.toStringAsFixed(0) : '0';
+    final windSpeed = (rawWind is num) ? rawWind.toStringAsFixed(0) : '0';
+
+    // Estimasi precipitation dari kondisi
+    String precip = '10%';
+    final cond = (forecast['conditions'] as String).toLowerCase();
+    if(cond.contains('rain')) precip = '90%';
+    else if(cond.contains('cloud')) precip = '40%';
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -351,14 +401,14 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
             blurRadius: 12,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(Icons.water_drop_outlined, '30%', 'Precipitation'),
+          _buildStatItem(Icons.water_drop_outlined, precip, 'Precipitation'),
           _buildStatItem(Icons.opacity, '$humidity%', 'Humidity'),
           _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed'),
         ],
@@ -369,17 +419,17 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   Widget _buildStatItem(IconData icon, String value, String label) {
     return Column(
       children: [
-        Icon(icon, color: Color(0xFF7AB5F0), size: 22),
-        SizedBox(height: 6),
+        Icon(icon, color: const Color(0xFF7AB5F0), size: 22),
+        const SizedBox(height: 6),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
@@ -393,7 +443,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   Widget _buildDateRangeSelector() {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.25),
         borderRadius: BorderRadius.circular(16),
@@ -410,7 +460,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Date Range',
                       style: TextStyle(
                         color: Colors.white,
@@ -418,10 +468,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       '${DateFormat('MMM d').format(_selectedStartDate)} - ${DateFormat('MMM d, yyyy').format(_selectedEndDate)}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -431,12 +481,12 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
                     Icon(Icons.edit_calendar,
                         color: Color(0xFF5B9FE3), size: 18),
@@ -460,7 +510,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   Widget _buildDailyForecastList() {
     if (_forecastData.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           children: [
             Icon(Icons.wb_sunny_outlined, size: 64, color: Colors.white70),
@@ -475,7 +525,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     }
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
@@ -483,7 +533,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 15,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -491,14 +541,18 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         children: _forecastData.asMap().entries.map((entry) {
           final index = entry.key;
           final forecast = entry.value;
+          
           final date = forecast['date'] as DateTime;
           final dayName = _getDayName(date, index);
           final condition = forecast['conditions'] as String;
-          final tempMax = (forecast['temp_max'] as num).toStringAsFixed(0);
-          final tempMin = (forecast['temp_min'] as num).toStringAsFixed(0);
+          
+          final rawMax = forecast['temp_max'];
+          final rawMin = forecast['temp_min'];
+          final tempMax = (rawMax is num) ? rawMax.toStringAsFixed(0) : '0';
+          final tempMin = (rawMin is num) ? rawMin.toStringAsFixed(0) : '0';
 
           return Container(
-            padding: EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
               border: index < _forecastData.length - 1
                   ? Border(
@@ -520,14 +574,14 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 // Weather icon
                 Icon(
                   _getWeatherIcon(condition),
                   color: _getIconColor(condition),
                   size: 26,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 // Condition
                 Expanded(
                   child: Text(
@@ -542,7 +596,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                 // Temperature
                 Text(
                   '$tempMax / $tempMin',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -563,7 +617,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         date.year == now.year) {
       return 'Today';
     }
-    final tomorrow = now.add(Duration(days: 1));
+    final tomorrow = now.add(const Duration(days: 1));
     if (date.day == tomorrow.day &&
         date.month == tomorrow.month &&
         date.year == tomorrow.year) {
@@ -586,10 +640,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   Color _getIconColor(String condition) {
     final c = condition.toLowerCase();
-    if (c.contains('clear') || c.contains('sunny')) return Color(0xFFFDB813);
-    if (c.contains('rain') || c.contains('shower')) return Color(0xFF5B9FE3);
-    if (c.contains('thunder')) return Color(0xFFFFB300);
+    if (c.contains('clear') || c.contains('sunny')) return const Color(0xFFFDB813);
+    if (c.contains('rain') || c.contains('shower')) return const Color(0xFF5B9FE3);
+    if (c.contains('thunder')) return const Color(0xFFFFB300);
     if (c.contains('cloud') || c.contains('overcast')) return Colors.grey;
-    return Color(0xFFFDB813);
+    return const Color(0xFFFDB813);
   }
 }

@@ -14,103 +14,204 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF5B9FE3),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF5B9FE3),
+              Color(0xFF7AB8F5),
+              Color(0xFFB8D4F0),
+            ],
           ),
         ),
-        centerTitle: true,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildAppearanceCard(context),
+                    const SizedBox(height: 20),
+                    _buildAboutCard(context),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          const SizedBox(height: 16),
-          _buildSettingsCard(
-            context,
-            children: [
-              _buildTemperatureUnitTile(context),
-              _buildDarkModeTile(context, themeProvider),
-            ],
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => Navigator.pop(context),
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              ),
+            ),
           ),
-          const SizedBox(height: 24),
-          _buildSettingsCard(
-            context,
-            children: [
-              _buildInfoTile(context, 'About', Icons.info_outline),
-              _buildInfoTile(
-                  context, 'Privacy Policy', Icons.privacy_tip_outlined),
-              _buildInfoTile(
-                  context, 'Terms of Service', Icons.description_outlined),
-            ],
-          )
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Settings',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 44), // To balance the back button
         ],
       ),
     );
   }
 
-  Widget _buildSettingsCard(BuildContext context,
-      {required List<Widget> children}) {
+  Widget _buildAppearanceCard(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.thermostat_outlined,
+            title: 'Temperature Unit',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _selectedUnit,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+              ],
+            ),
+            onTap: () => _showTemperatureUnitDialog(context),
+          ),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.palette_outlined,
+            title: 'Dark Mode',
+            isLast: true,
+            trailing: Switch(
+              value: themeProvider.isDarkMode,
+              onChanged: (value) {
+                themeProvider.toggleTheme(value);
+              },
+              activeTrackColor: const Color(0xFF5B9FE3).withOpacity(0.7),
+              activeColor: Colors.white,
+            ),
+            onTap: () {
+              themeProvider.toggleTheme(!themeProvider.isDarkMode);
+            },
           ),
         ],
       ),
-      child: Column(children: children),
     );
   }
 
-  Widget _buildTemperatureUnitTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.thermostat_outlined),
-      title: const Text('Temperature Unit'),
-      subtitle: Text(_selectedUnit),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () => _showTemperatureUnitDialog(context),
-    );
-  }
-
-  Widget _buildDarkModeTile(BuildContext context, ThemeProvider themeProvider) {
-    return ListTile(
-      leading: const Icon(Icons.palette_outlined),
-      title: const Text('Dark Mode'),
-      trailing: Switch(
-        value: themeProvider.isDarkMode,
-        onChanged: (value) {
-          themeProvider.toggleTheme(value);
-        },
-        activeColor: Theme.of(context).colorScheme.primary,
+  Widget _buildAboutCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.info_outline,
+            title: 'About',
+            onTap: () {},
+          ),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            onTap: () {},
+          ),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.description_outlined,
+            title: 'Terms of Service',
+            isLast: true,
+            onTap: () {},
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoTile(BuildContext context, String title, IconData icon) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {
-        // Handle navigation to info pages
-      },
+  Widget _buildSettingsTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    Widget? trailing,
+    VoidCallback? onTap,
+    bool isLast = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: isLast 
+            ? const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))
+            : BorderRadius.zero,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : Border(bottom: BorderSide(color: Colors.white.withOpacity(0.2))),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing else const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -119,7 +220,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Select Temperature Unit'),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Select Unit'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -128,26 +231,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: 'Celsius',
                 groupValue: _selectedUnit,
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedUnit = value;
-                    });
-                  }
+                  if (value != null) setState(() => _selectedUnit = value);
                   Navigator.of(context).pop();
                 },
+                activeColor: const Color(0xFF5B9FE3),
               ),
               RadioListTile<String>(
                 title: const Text('Fahrenheit'),
                 value: 'Fahrenheit',
                 groupValue: _selectedUnit,
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedUnit = value;
-                    });
-                  }
+                  if (value != null) setState(() => _selectedUnit = value);
                   Navigator.of(context).pop();
                 },
+                activeColor: const Color(0xFF5B9FE3),
               ),
             ],
           ),
