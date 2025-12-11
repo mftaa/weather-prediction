@@ -13,9 +13,7 @@ class HomePageNew extends StatefulWidget {
 
 class _HomePageNewState extends State<HomePageNew> {
   bool _isLoading = true;
-  Map<String, dynamic>? _currentWeather;
   List<dynamic> _hourlyForecast = [];
-  List<dynamic> _dailyForecast = [];
   String _location = "Location";
 
   @override
@@ -31,12 +29,11 @@ class _HomePageNewState extends State<HomePageNew> {
       // Fetch current weather
       final currentResponse = await http.get(
         Uri.parse('$myDomain/weather-data/last?location=$_location'),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (currentResponse.statusCode == 200) {
-        setState(() {
-          _currentWeather = json.decode(currentResponse.body);
-        });
+        // Current weather data received (dapat digunakan jika diperlukan)
+        debugPrint('Current weather data received');
       }
 
       // Fetch hourly forecast (AI prediction)
@@ -51,13 +48,19 @@ class _HomePageNewState extends State<HomePageNew> {
           'hour': now.hour,
           'num_hours': 24,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (hourlyResponse.statusCode == 200) {
-        final data = json.decode(hourlyResponse.body);
-        setState(() {
-          _hourlyForecast = data['data'] ?? [];
-        });
+        try {
+          final data = json.decode(hourlyResponse.body);
+          if (data['data'] is List && (data['data'] as List).isNotEmpty) {
+            setState(() {
+              _hourlyForecast = data['data'] ?? [];
+            });
+          }
+        } catch (e) {
+          debugPrint('Error parsing hourly forecast: $e');
+        }
       }
 
       // Fetch daily forecast (AI prediction)
@@ -70,18 +73,25 @@ class _HomePageNewState extends State<HomePageNew> {
           'year': now.year,
           'num_days': 7,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (dailyResponse.statusCode == 200) {
-        final data = json.decode(dailyResponse.body);
-        setState(() {
-          _dailyForecast = data['data'] ?? [];
-        });
+        try {
+          final data = json.decode(dailyResponse.body);
+          if (data['data'] is List) {
+            // Daily forecast data received (dapat digunakan jika diperlukan)
+            debugPrint('Daily forecast data received');
+          }
+        } catch (e) {
+          debugPrint('Error parsing daily forecast: $e');
+        }
       }
     } catch (e) {
-      print('Error fetching weather: $e');
+      debugPrint('Error fetching weather: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -451,15 +461,25 @@ class _HomePageNewState extends State<HomePageNew> {
                   _hourlyForecast.isNotEmpty && index < _hourlyForecast.length
                       ? _hourlyForecast[index]
                       : {};
-              final hour = forecast['datetime']
-                      ?.toString()
-                      .split(' ')[1]
-                      ?.substring(0, 5) ??
-                  '${9 + index}:00';
+              
+              // Parse hour safely
+              String hour = '${9 + index}:00';
+              if (forecast['datetime'] != null) {
+                try {
+                  final parts = forecast['datetime'].toString().split(' ');
+                  if (parts.length > 1 && parts[1].length >= 5) {
+                    hour = parts[1].substring(0, 5);
+                  }
+                } catch (e) {
+                  // Use default hour if parsing fails
+                  debugPrint('Error parsing hour: $e');
+                }
+              }
+              
               final temp =
                   forecast['temp']?.toStringAsFixed(0) ?? '${22 - index}';
               final condition = forecast['conditions'] ?? 'Clear';
-              final isActive = index == 1;
+              final isActive = index == 0;
 
               return Container(
                 width: 65,
