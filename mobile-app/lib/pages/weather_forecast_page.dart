@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/ai_prediction_service.dart';
 
 class WeatherForecastPage extends StatefulWidget {
@@ -10,14 +11,13 @@ class WeatherForecastPage extends StatefulWidget {
 
 class _WeatherForecastPageState extends State<WeatherForecastPage> {
   DateTime _selectedStartDate = DateTime.now();
-  DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 7)); // Default 7 hari
+  DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 6));
   List<Map<String, dynamic>> _forecastData = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Otomatis load data saat halaman dibuka
     _generateForecast();
   }
 
@@ -34,9 +34,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).colorScheme.primary,
+              primary: Color(0xFF5B9FE3),
               onPrimary: Colors.white,
-              onSurface: Colors.black87,
+              surface: Colors.white,
+              onSurface: Colors.black,
             ),
           ),
           child: child!,
@@ -49,7 +50,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         _selectedStartDate = picked.start;
         _selectedEndDate = picked.end;
       });
-      _generateForecast(); // Auto refresh saat tanggal berubah
+      _generateForecast();
     }
   }
 
@@ -80,15 +81,16 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
           allForecasts.add({
             'date': forecastDate,
-            'conditions': dayData['conditions'],
-            'temp_min': dayData['temp_min'],
-            'temp_max': dayData['temp_max'],
-            'temp_mean': dayData['temp_mean'],
-            'humidity_avg': dayData['humidity_avg'],
-            'windspeed_avg': dayData['windspeed_avg'],
-            'pressure_avg': dayData['pressure_avg'],
+            'conditions': dayData['conditions'] ?? 'Partly Cloudy',
+            'temp_min': dayData['temp_min'] ?? 20.0,
+            'temp_max': dayData['temp_max'] ?? 30.0,
+            'temp_mean': dayData['temp_mean'] ?? 25.0,
+            'humidity_avg': dayData['humidity_avg'] ?? 70.0,
+            'windspeed_avg': dayData['windspeed_avg'] ?? 10.0,
+            'pressure_avg': dayData['pressure_avg'] ?? 1013.0,
           });
         }
+
         setState(() {
           _forecastData = allForecasts;
         });
@@ -104,239 +106,227 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     }
   }
 
-  // --- UI COMPONENTS ---
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Forecast",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF5B9FE3),
+              Color(0xFF7AB8F5),
+              Color(0xFFB8D4F0),
+            ],
+          ),
         ),
-        // Menggunakan Gradient yang sama dengan HomePage
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary
-              ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: Colors.white))
+                    : RefreshIndicator(
+                        onRefresh: _generateForecast,
+                        child: SingleChildScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildTomorrowCard(),
+                                SizedBox(height: 15),
+                                _buildStatsCard(),
+                                SizedBox(height: 20),
+                                _buildDateRangeSelector(),
+                                SizedBox(height: 20),
+                                _buildDailyForecastList(),
+                                SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => Navigator.pop(context),
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              ),
             ),
           ),
-        ),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white), // Tombol back putih
-        titleTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          // Bagian Pemilih Tanggal
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildDateSelector(context),
-          ),
-          const SizedBox(height: 16),
-          // List Forecast
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _forecastData.isNotEmpty
-                    ? ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        itemCount: _forecastData.length,
-                        itemBuilder: (context, index) {
-                          return _buildForecastCard(context, _forecastData[index]);
-                        },
-                      )
-                    : const Center(
-                        child: Text("No forecast data available", style: TextStyle(color: Colors.grey)),
-                      ),
+            child: Center(
+              child: Text(
+                '7-Day Forecasts',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: _selectDateRange,
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.more_vert, color: Colors.white, size: 24),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDateSelector(BuildContext context) {
-    // Style disesuaikan dengan _buildInfoCard di HomePage
-    return GestureDetector(
-      onTap: _selectDateRange,
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16.0),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Prediction Range",
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_month, 
-                      size: 18, 
-                      color: Theme.of(context).colorScheme.primary
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "${_selectedStartDate.day}/${_selectedStartDate.month} - ${_selectedEndDate.day}/${_selectedEndDate.month} ${_selectedEndDate.year}",
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.edit,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildTomorrowCard() {
+    if (_forecastData.isEmpty) return SizedBox.shrink();
 
-  Widget _buildForecastCard(BuildContext context, Map<String, dynamic> data) {
-    final date = data['date'] as DateTime;
-    final dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
-    final condition = data['conditions'] ?? 'Unknown';
+    final forecast = _forecastData[0];
+    final date = forecast['date'] as DateTime;
+    final tempMax = (forecast['temp_max'] as num).toStringAsFixed(0);
+    final tempMin = (forecast['temp_min'] as num).toStringAsFixed(0);
+    final condition = forecast['conditions'] as String;
+
+    String dayLabel = 'Tomorrow';
+    if (date.day == DateTime.now().day) {
+      dayLabel = 'Today';
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      padding: const EdgeInsets.all(16.0),
+      width: double.infinity,
+      padding: EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16.0),
-        // Shadow sama dengan HomePage
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF5A9FE8),
+            Color(0xFF7BB5F0),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Color(0xFF4A90E2).withOpacity(0.3),
+            blurRadius: 15,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Header Card: Hari, Tanggal, Icon Cuaca Utama
+          Text(
+            dayLabel,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: _getConditionColor(condition).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: _getWeatherIcon(condition),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        dayName,
+                        tempMax,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 72,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: Colors.white,
+                          height: 1,
                         ),
                       ),
                       Text(
-                        "${date.day}/${date.month}/${date.year}",
+                        '°',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).textTheme.bodySmall?.color,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '/$tempMin°',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${((data['temp_mean'] as num?) ?? 0).toStringAsFixed(1)}°C',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF6B6B), // Warna merah dari HomePage
-                    ),
-                  ),
+                  SizedBox(height: 8),
                   Text(
                     condition,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 18,
+                      color: Colors.white.withOpacity(0.95),
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.0),
-            child: Divider(height: 1),
-          ),
-          // Detail Grid: Menggunakan style mini info card
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildMiniInfo(
-                context, 
-                Icons.water_drop, 
-                "${((data['humidity_avg'] as num?) ?? 0).toStringAsFixed(0)}%", 
-                const Color(0xFF4ECDC4) // Warna Teal dari HomePage
-              ),
-              _buildMiniInfo(
-                context, 
-                Icons.air, 
-                "${((data['windspeed_avg'] as num?) ?? 0).toStringAsFixed(1)} m/s", 
-                const Color(0xFFAA96DA) // Warna Ungu dari HomePage
-              ),
-              _buildMiniInfo(
-                context, 
-                Icons.compress, 
-                "${((data['pressure_avg'] as num?) ?? 0).toStringAsFixed(0)} hPa", 
-                const Color(0xFF95E1D3) // Warna Light Teal dari HomePage
+              // Weather Icon
+              Container(
+                width: 100,
+                height: 100,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Icon(
+                        _getWeatherIcon(condition),
+                        size: 70,
+                        color: _getIconColor(condition),
+                      ),
+                    ),
+                    if (condition.toLowerCase().contains('cloud'))
+                      Positioned(
+                        left: 0,
+                        bottom: 10,
+                        child: Icon(
+                          Icons.cloud,
+                          size: 50,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -345,52 +335,261 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     );
   }
 
-  // Mini version of _buildInfoCard from HomePage
-  Widget _buildMiniInfo(BuildContext context, IconData icon, String value, Color color) {
+  Widget _buildStatsCard() {
+    if (_forecastData.isEmpty) return SizedBox.shrink();
+
+    final forecast = _forecastData[0];
+    final humidity = (forecast['humidity_avg'] as num).toStringAsFixed(0);
+    final windSpeed = (forecast['windspeed_avg'] as num).toStringAsFixed(0);
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem(Icons.water_drop_outlined, '30%', 'Precipitation'),
+          _buildStatItem(Icons.opacity, '$humidity%', 'Humidity'),
+          _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String value, String label) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
+        Icon(icon, color: Color(0xFF7AB5F0), size: 22),
+        SizedBox(height: 6),
         Text(
           value,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
+            color: Colors.black87,
+          ),
+        ),
+        SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey[500],
           ),
         ),
       ],
     );
   }
 
-  Color _getConditionColor(String condition) {
-    final c = condition.toLowerCase();
-    if (c.contains('rain')) return const Color(0xFF6C5CE7);
-    if (c.contains('sunny') || c.contains('clear')) return Colors.orange;
-    return Colors.blueGrey;
+  Widget _buildDateRangeSelector() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _selectDateRange,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Date Range',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '${DateFormat('MMM d').format(_selectedStartDate)} - ${DateFormat('MMM d, yyyy').format(_selectedEndDate)}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_calendar,
+                        color: Color(0xFF5B9FE3), size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Change',
+                      style: TextStyle(
+                        color: Color(0xFF5B9FE3),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Icon _getWeatherIcon(String condition) {
-    final c = condition.toLowerCase();
-    IconData iconData;
-    Color iconColor;
-
-    if (c.contains('partially cloudy')) {
-      iconData = Icons.wb_cloudy;
-      iconColor = Colors.grey;
-    } else if (c.contains('rain') || c.contains('showers')) {
-      iconData = Icons.grain; // atau Icons.umbrella sesuai HomePage
-      iconColor = const Color(0xFF6C5CE7); // Deep Purple
-    } else if (c.contains('clear') || c.contains('sunny')) {
-      iconData = Icons.wb_sunny;
-      iconColor = Colors.orange;
-    } else if (c.contains('overcast')) {
-      iconData = Icons.cloud;
-      iconColor = Colors.blueGrey;
-    } else {
-      iconData = Icons.wb_sunny;
-      iconColor = Colors.orange;
+  Widget _buildDailyForecastList() {
+    if (_forecastData.isEmpty) {
+      return Center(
+        child: Column(
+          children: [
+            Icon(Icons.wb_sunny_outlined, size: 64, color: Colors.white70),
+            SizedBox(height: 16),
+            Text(
+              'No forecast data available',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ],
+        ),
+      );
     }
-    return Icon(iconData, color: iconColor, size: 32);
+
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: _forecastData.asMap().entries.map((entry) {
+          final index = entry.key;
+          final forecast = entry.value;
+          final date = forecast['date'] as DateTime;
+          final dayName = _getDayName(date, index);
+          final condition = forecast['conditions'] as String;
+          final tempMax = (forecast['temp_max'] as num).toStringAsFixed(0);
+          final tempMin = (forecast['temp_min'] as num).toStringAsFixed(0);
+
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              border: index < _forecastData.length - 1
+                  ? Border(
+                      bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+                    )
+                  : null,
+            ),
+            child: Row(
+              children: [
+                // Day name
+                SizedBox(
+                  width: 50,
+                  child: Text(
+                    dayName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                // Weather icon
+                Icon(
+                  _getWeatherIcon(condition),
+                  color: _getIconColor(condition),
+                  size: 26,
+                ),
+                SizedBox(width: 12),
+                // Condition
+                Expanded(
+                  child: Text(
+                    condition,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Temperature
+                Text(
+                  '$tempMax / $tempMin',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _getDayName(DateTime date, int index) {
+    final now = DateTime.now();
+    if (date.day == now.day &&
+        date.month == now.month &&
+        date.year == now.year) {
+      return 'Today';
+    }
+    final tomorrow = now.add(Duration(days: 1));
+    if (date.day == tomorrow.day &&
+        date.month == tomorrow.month &&
+        date.year == tomorrow.year) {
+      return 'Tmrw';
+    }
+    return DateFormat('EEE').format(date);
+  }
+
+  IconData _getWeatherIcon(String condition) {
+    final c = condition.toLowerCase();
+    if (c.contains('clear') || c.contains('sunny')) return Icons.wb_sunny;
+    if (c.contains('cloud')) return Icons.cloud;
+    if (c.contains('rain') || c.contains('shower')) return Icons.grain;
+    if (c.contains('thunder')) return Icons.flash_on;
+    if (c.contains('fog') || c.contains('mist')) return Icons.cloud_queue;
+    if (c.contains('snow')) return Icons.ac_unit;
+    if (c.contains('overcast')) return Icons.cloud;
+    return Icons.wb_cloudy;
+  }
+
+  Color _getIconColor(String condition) {
+    final c = condition.toLowerCase();
+    if (c.contains('clear') || c.contains('sunny')) return Color(0xFFFDB813);
+    if (c.contains('rain') || c.contains('shower')) return Color(0xFF5B9FE3);
+    if (c.contains('thunder')) return Color(0xFFFFB300);
+    if (c.contains('cloud') || c.contains('overcast')) return Colors.grey;
+    return Color(0xFFFDB813);
   }
 }
