@@ -1,3 +1,2 @@
 String myUsername = "";
-// String myDomain = "http://10.252.206.210:8000";
-String myDomain = "https://api.azanifattur.biz.id";
+String myDomain = "https://api.wrseno.my.id"; // For testing with backend

@@ -11,6 +11,22 @@ class ProfilePage extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color(0xFF5B9FE3),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Profile',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
       // The scaffold background color is now set by the theme in main.dart
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -181,7 +197,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, {required List<Widget> children}) {
+  Widget _buildMenuCard(BuildContext context,
+      {required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,

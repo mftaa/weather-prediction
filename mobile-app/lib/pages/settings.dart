@@ -17,16 +17,27 @@ class _SettingsPageState extends State<SettingsPage> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color(0xFF5B9FE3),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         children: [
-          const SizedBox(height: 24),
-          const Text(
-            'Settings',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           _buildSettingsCard(
             context,
             children: [
@@ -39,8 +50,10 @@ class _SettingsPageState extends State<SettingsPage> {
             context,
             children: [
               _buildInfoTile(context, 'About', Icons.info_outline),
-              _buildInfoTile(context, 'Privacy Policy', Icons.privacy_tip_outlined),
-              _buildInfoTile(context, 'Terms of Service', Icons.description_outlined),
+              _buildInfoTile(
+                  context, 'Privacy Policy', Icons.privacy_tip_outlined),
+              _buildInfoTile(
+                  context, 'Terms of Service', Icons.description_outlined),
             ],
           )
         ],
@@ -76,8 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildDarkModeTile(
-      BuildContext context, ThemeProvider themeProvider) {
+  Widget _buildDarkModeTile(BuildContext context, ThemeProvider themeProvider) {
     return ListTile(
       leading: const Icon(Icons.palette_outlined),
       title: const Text('Dark Mode'),
