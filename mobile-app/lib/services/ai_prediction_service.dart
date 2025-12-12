@@ -1,8 +1,8 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:demo1/pages/variables.dart';
+import 'api_service.dart';
 
 /// Service untuk mengakses endpoint prediksi cuaca AI dari backend
+/// Menggunakan ApiService dengan fallback otomatis ke endpoint cadangan
 class AIPredictionService {
   /// Prediksi cuaca per jam (Hourly Prediction)
   ///
@@ -30,10 +30,9 @@ class AIPredictionService {
         'num_hours': numHours,
       };
 
-      final response = await http.post(
-        Uri.parse('$myDomain/ai-prediction/hourly'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request),
+      final response = await ApiService.post(
+        '/ai-prediction/hourly',
+        body: request,
       );
 
       if (response.statusCode == 200) {
@@ -71,10 +70,9 @@ class AIPredictionService {
         'num_days': numDays,
       };
 
-      final response = await http.post(
-        Uri.parse('$myDomain/ai-prediction/daily'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request),
+      final response = await ApiService.post(
+        '/ai-prediction/daily',
+        body: request,
       );
 
       if (response.statusCode == 200) {
@@ -94,8 +92,8 @@ class AIPredictionService {
   /// Returns: Map berisi informasi model (version, features, targets, dll)
   static Future<Map<String, dynamic>> getModelInfo() async {
     try {
-      final response = await http.get(
-        Uri.parse('$myDomain/ai-prediction/model-info'),
+      final response = await ApiService.get(
+        '/ai-prediction/model-info',
       );
 
       if (response.statusCode == 200) {
@@ -123,8 +121,7 @@ class AIPredictionService {
   }
 
   /// Helper function untuk prediksi beberapa hari ke depan (daily)
-  static Future<Map<String, dynamic>> predictNextDays(
-      {int numDays = 3}) async {
+  static Future<Map<String, dynamic>> predictNextDays({int numDays = 3}) async {
     final now = DateTime.now();
     return predictDaily(
       day: now.day,

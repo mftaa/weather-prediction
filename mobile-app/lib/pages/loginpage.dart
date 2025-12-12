@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'variables.dart';
+import '../services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,15 +27,12 @@ class _LoginPageState extends State<LoginPage> {
     myUsername = _emailController.text;
 
     try {
-      final response = await http.post(
-        Uri.parse('$myDomain/auth/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
+      final response = await ApiService.post(
+        '/auth/login',
+        body: {
           'username': _emailController.text,
           'password': _passwordController.text,
-        }),
+        },
       );
 
       if (!mounted) return;
@@ -66,12 +63,14 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Oops!", style: TextStyle(color: Colors.redAccent)),
           content: Text(message),
           actions: [
             TextButton(
-              child: const Text("Try Again", style: TextStyle(color: Color(0xFF5B9FE3))),
+              child: const Text("Try Again",
+                  style: TextStyle(color: Color(0xFF5B9FE3))),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -130,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white.withOpacity(0.9),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
 
                   // CARD PUTIH UNTUK FORM
@@ -160,25 +159,20 @@ class _LoginPageState extends State<LoginPage> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 30),
-                        
                         _buildTextField(
                           controller: _emailController,
                           labelText: "Username",
                           prefixIcon: Icons.person_outline,
                         ),
                         const SizedBox(height: 20),
-                        
                         _buildTextField(
                           controller: _passwordController,
                           labelText: "Password",
                           prefixIcon: Icons.lock_outline,
                           isPassword: true,
                         ),
-                        
                         const SizedBox(height: 30),
-                        
                         _buildLoginButton(),
-                        
                         const SizedBox(height: 20),
                         _buildRegisterLink(),
                       ],
@@ -224,7 +218,8 @@ class _LoginPageState extends State<LoginPage> {
             : null,
         filled: true,
         fillColor: const Color(0xFFF5F6FA), // Warna abu sangat muda
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.0),
           borderSide: BorderSide.none,
@@ -241,7 +236,8 @@ class _LoginPageState extends State<LoginPage> {
     return SizedBox(
       height: 55,
       child: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B9FE3)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF5B9FE3)))
           : ElevatedButton(
               onPressed: _login,
               style: ElevatedButton.styleFrom(

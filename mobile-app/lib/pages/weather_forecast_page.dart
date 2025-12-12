@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'variables.dart'; // Pastikan import ini ada untuk akses variabel myDomain
+import '../services/api_service.dart';
 import '../services/notification_service.dart';
 
 class WeatherForecastPage extends StatefulWidget {
@@ -16,7 +15,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   // Default range: Hari ini sampai 6 hari ke depan (Total 7 hari)
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 6));
-  
+
   List<Map<String, dynamic>> _forecastData = [];
   bool _isLoading = false;
 
@@ -59,7 +58,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     }
   }
 
- // --- LOGIC PERBAIKAN: SINGLE REQUEST (BULK DATA) ---
+  // --- LOGIC PERBAIKAN: SINGLE REQUEST (BULK DATA) ---
   Future<void> _fetchForecastData() async {
     setState(() {
       _isLoading = true;
@@ -68,23 +67,23 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
     try {
       // 1. Hitung jumlah hari (num_days) berdasarkan range tanggal yang dipilih
-      final int numDays = _selectedEndDate.difference(_selectedStartDate).inDays + 1;
+      final int numDays =
+          _selectedEndDate.difference(_selectedStartDate).inDays + 1;
 
-      // 2. Kirim Request Satu Kali Saja
-      final response = await http.post(
-        Uri.parse('$myDomain/ai-prediction/daily'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      // 2. Kirim Request dengan ApiService (fallback otomatis)
+      final response = await ApiService.post(
+        '/ai-prediction/daily',
+        body: {
           'day': _selectedStartDate.day,
           'month': _selectedStartDate.month,
           'year': _selectedStartDate.year,
           'num_days': numDays, // Request sejumlah hari sekaligus
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-        
+
         // 3. Ambil array 'data' dari response JSON
         final List<dynamic> rawDataList = result['data'] ?? [];
         final List<Map<String, dynamic>> parsedForecasts = [];
@@ -119,9 +118,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         // Check for rain in the first forecast item (Today/Tomorrow)
         if (parsedForecasts.isNotEmpty) {
           final firstForecast = parsedForecasts[0];
-          final condition = (firstForecast['conditions'] as String).toLowerCase();
-          if (condition.contains('rain') || 
-              condition.contains('shower') || 
+          final condition =
+              (firstForecast['conditions'] as String).toLowerCase();
+          if (condition.contains('rain') ||
+              condition.contains('shower') ||
               condition.contains('thunder')) {
             NotificationService().showRainAlert(
               'Rain Alert',
@@ -135,7 +135,9 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     } catch (e) {
       print("Error fetching data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Gagal memuat data: $e'),
+            backgroundColor: Colors.red),
       );
     } finally {
       setState(() {
@@ -143,6 +145,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,7 +214,8 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
               onTap: () => Navigator.pop(context),
               child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                child: Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -227,7 +231,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                   Text(
+                  Text(
                     'Semarang', // Lokasi Hardcoded sesuai konteks
                     style: TextStyle(
                       color: Colors.white70,
@@ -260,13 +264,13 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     // Data index 0 = Hari pertama dalam range (Besok atau Hari ini)
     final forecast = _forecastData[0];
     final date = forecast['date'] as DateTime;
-    
+
     // Parsing angka agar aman (handle int/double)
     final rawMax = forecast['temp_max'];
     final rawMin = forecast['temp_min'];
     final tempMax = (rawMax is num) ? rawMax.toStringAsFixed(0) : '0';
     final tempMin = (rawMin is num) ? rawMin.toStringAsFixed(0) : '0';
-    
+
     final condition = forecast['conditions'] as String;
 
     String dayLabel = DateFormat('EEEE').format(date); // Nama hari lengkap
@@ -397,15 +401,16 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     // Parsing angka agar aman
     final rawHum = forecast['humidity_avg'];
     final rawWind = forecast['windspeed_avg'];
-    
+
     final humidity = (rawHum is num) ? rawHum.toStringAsFixed(0) : '0';
     final windSpeed = (rawWind is num) ? rawWind.toStringAsFixed(0) : '0';
 
     // Estimasi precipitation dari kondisi
     String precip = '10%';
     final cond = (forecast['conditions'] as String).toLowerCase();
-    if(cond.contains('rain')) precip = '90%';
-    else if(cond.contains('cloud')) precip = '40%';
+    if (cond.contains('rain'))
+      precip = '90%';
+    else if (cond.contains('cloud')) precip = '40%';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
@@ -496,7 +501,8 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -556,11 +562,11 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
         children: _forecastData.asMap().entries.map((entry) {
           final index = entry.key;
           final forecast = entry.value;
-          
+
           final date = forecast['date'] as DateTime;
           final dayName = _getDayName(date, index);
           final condition = forecast['conditions'] as String;
-          
+
           final rawMax = forecast['temp_max'];
           final rawMin = forecast['temp_min'];
           final tempMax = (rawMax is num) ? rawMax.toStringAsFixed(0) : '0';
@@ -655,8 +661,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   Color _getIconColor(String condition) {
     final c = condition.toLowerCase();
-    if (c.contains('clear') || c.contains('sunny')) return const Color(0xFFFDB813);
-    if (c.contains('rain') || c.contains('shower')) return const Color(0xFF5B9FE3);
+    if (c.contains('clear') || c.contains('sunny'))
+      return const Color(0xFFFDB813);
+    if (c.contains('rain') || c.contains('shower'))
+      return const Color(0xFF5B9FE3);
     if (c.contains('thunder')) return const Color(0xFFFFB300);
     if (c.contains('cloud') || c.contains('overcast')) return Colors.grey;
     return const Color(0xFFFDB813);

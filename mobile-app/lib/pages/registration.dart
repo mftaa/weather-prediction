@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:demo1/pages/variables.dart';
+import '../services/api_service.dart';
 
 class User {
   final String username;
@@ -72,11 +70,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Future<void> sendOTP() async {
     if (_formKey.currentState!.validate()) {
       _dialogOtpSendingLoading();
-      final Uri url = Uri.parse('$myDomain/auth/generate-otp');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': emailController.text}),
+      final response = await ApiService.post(
+        '/auth/generate-otp',
+        body: {'email': emailController.text},
       );
 
       Navigator.of(context).pop(); // Close loading dialog
@@ -120,11 +116,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
       otp: otpController.text,
     );
 
-    final Uri url = Uri.parse('$myDomain/auth/register');
-    final http.Response response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(user.toJson()),
+    final response = await ApiService.post(
+      '/auth/register',
+      body: user.toJson(),
     );
 
     Navigator.of(context).pop(); // Close the OTP verification dialog
@@ -144,7 +138,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -152,7 +145,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
                 const SizedBox(height: 100.0),
                 TextFormField(
                   controller: usernameController,

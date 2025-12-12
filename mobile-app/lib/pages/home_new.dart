@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'variables.dart'; // Pastikan file ini ada di projectmu
+import '../services/api_service.dart';
 
 class HomePageNew extends StatefulWidget {
   const HomePageNew({super.key});
@@ -30,33 +29,34 @@ class _HomePageNewState extends State<HomePageNew> {
     try {
       final now = DateTime.now();
 
-      // 1. SIAPKAN SEMUA REQUEST
-      final requestCurrent = http.get(
-        Uri.parse('$myDomain/weather-data/last?location=$_location'),
-      ).timeout(const Duration(seconds: 10));
+      // Menggunakan ApiService dengan fallback otomatis
+      // Jika endpoint pertama gagal, akan otomatis beralih ke endpoint kedua
 
-      final requestHourly = http.post(
-        Uri.parse('$myDomain/ai-prediction/hourly'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      // 1. SIAPKAN SEMUA REQUEST dengan ApiService
+      final requestCurrent = ApiService.get(
+        '/weather-data/last?location=$_location',
+      );
+
+      final requestHourly = ApiService.post(
+        '/ai-prediction/hourly',
+        body: {
           'day': now.day,
           'month': now.month,
           'year': now.year,
           'hour': now.hour,
           'num_hours': 24,
-        }),
-      ).timeout(const Duration(seconds: 10));
+        },
+      );
 
-      final requestDaily = http.post(
-        Uri.parse('$myDomain/ai-prediction/daily'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final requestDaily = ApiService.post(
+        '/ai-prediction/daily',
+        body: {
           'day': now.day,
           'month': now.month,
           'num_days': 7,
           'year': now.year,
-        }),
-      ).timeout(const Duration(seconds: 10));
+        },
+      );
 
       // 2. JALANKAN SEMUA BERSAMAAN
       final results = await Future.wait([
@@ -114,7 +114,8 @@ class _HomePageNewState extends State<HomePageNew> {
         ),
         child: SafeArea(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
               : RefreshIndicator(
                   onRefresh: _fetchWeatherData,
                   child: LayoutBuilder(
@@ -139,10 +140,10 @@ class _HomePageNewState extends State<HomePageNew> {
                                 const SizedBox(height: 20),
                                 _buildHourlyForecast(),
                                 const SizedBox(height: 20),
-                                
+
                                 // Bagian ini yang sudah diperbarui
-                                _buildOtherCitiesSection(), 
-                                
+                                _buildOtherCitiesSection(),
+
                                 const SizedBox(height: 20),
                               ],
                             ),
@@ -156,7 +157,8 @@ class _HomePageNewState extends State<HomePageNew> {
       ),
     );
   }
- void _showMenuOptions(BuildContext context) {
+
+  void _showMenuOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -178,7 +180,7 @@ class _HomePageNewState extends State<HomePageNew> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            
+
             // Menu 1: Refresh
             ListTile(
               leading: Container(
@@ -189,7 +191,8 @@ class _HomePageNewState extends State<HomePageNew> {
                 ),
                 child: const Icon(Icons.refresh, color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Refresh Data', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Refresh Data',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context); // Tutup menu
                 _fetchWeatherData(); // Panggil fungsi refresh
@@ -205,9 +208,11 @@ class _HomePageNewState extends State<HomePageNew> {
                   color: const Color(0xFF5B9FE3).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.person_outline, color: Color(0xFF5B9FE3)),
+                child:
+                    const Icon(Icons.person_outline, color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Profile',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/profile');
@@ -223,9 +228,11 @@ class _HomePageNewState extends State<HomePageNew> {
                   color: const Color(0xFF5B9FE3).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.settings_outlined, color: Color(0xFF5B9FE3)),
+                child: const Icon(Icons.settings_outlined,
+                    color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Settings',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/settings');
@@ -243,11 +250,13 @@ class _HomePageNewState extends State<HomePageNew> {
                 ),
                 child: const Icon(Icons.logout, color: Colors.redAccent),
               ),
-              title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Logout',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
                 // Navigasi balik ke Login & hapus history stack
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/login', (route) => false);
               },
             ),
           ],
@@ -255,6 +264,7 @@ class _HomePageNewState extends State<HomePageNew> {
       ),
     );
   }
+
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -290,7 +300,7 @@ class _HomePageNewState extends State<HomePageNew> {
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
             onTap: () {
-                _showMenuOptions(context);
+              _showMenuOptions(context);
             },
             child: const Padding(
               padding: EdgeInsets.all(8),
@@ -506,7 +516,8 @@ class _HomePageNewState extends State<HomePageNew> {
                   Navigator.pushNamed(context, '/forecast');
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: Row(
                     children: [
                       Text(
@@ -548,8 +559,7 @@ class _HomePageNewState extends State<HomePageNew> {
                     rawTime.length > 5 ? rawTime.substring(0, 5) : rawTime;
               } else {
                 int calculatedHour = (currentHour + index) % 24;
-                hourDisplay =
-                    '${calculatedHour.toString().padLeft(2, '0')}:00';
+                hourDisplay = '${calculatedHour.toString().padLeft(2, '0')}:00';
               }
 
               var tempRaw = forecast['temp'];
@@ -558,8 +568,9 @@ class _HomePageNewState extends State<HomePageNew> {
                 if (tempRaw is num) {
                   temp = tempRaw.round().toString();
                 } else {
-                  temp = double.tryParse(tempRaw.toString())?.round().toString() ??
-                      '0';
+                  temp =
+                      double.tryParse(tempRaw.toString())?.round().toString() ??
+                          '0';
                 }
               } else {
                 temp = '-';
@@ -669,9 +680,9 @@ class _HomePageNewState extends State<HomePageNew> {
           temp: '29',
           isAvailable: false,
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Kota 2: Bandung (Contoh UNAVAILABLE / LOCKED)
         _buildCityCard(
           city: 'Bandung',
@@ -713,11 +724,13 @@ class _HomePageNewState extends State<HomePageNew> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Sabar ya! Data cuaca untuk $city sedang disiapkan 🚧'),
+              content:
+                  Text('Sabar ya! Data cuaca untuk $city sedang disiapkan 🚧'),
               backgroundColor: Colors.grey[800],
               duration: const Duration(milliseconds: 1500),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -770,30 +783,29 @@ class _HomePageNewState extends State<HomePageNew> {
                           ),
                         ),
                         // Kondisi cuaca diganti "Coming Soon" jika unavailable
-                        isAvailable 
-                        ? Text(
-                            condition,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 12,
-                            ),
-                          )
-                        : Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4)
-                            ),
-                            child: const Text(
-                              'Coming Soon',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold
+                        isAvailable
+                            ? Text(
+                                condition,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 12,
+                                ),
+                              )
+                            : Container(
+                                margin: const EdgeInsets.only(top: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4)),
+                                child: const Text(
+                                  'Coming Soon',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                          ),
                       ],
                     ),
                   ],

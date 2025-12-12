@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'variables.dart';
+import '../services/api_service.dart';
 
 class OtpPage extends StatelessWidget {
   const OtpPage({super.key});
@@ -12,11 +11,9 @@ class OtpPage extends StatelessWidget {
 
     Future<void> sendOTP(String email) async {
       try {
-        final Uri url = Uri.parse('$myDomain/auth/generate-otp');
-        final http.Response response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: ({'email': email}),
+        final response = await ApiService.post(
+          '/auth/generate-otp',
+          body: {'email': email},
         );
 
         if (response.statusCode == 200) {
@@ -32,7 +29,6 @@ class OtpPage extends StatelessWidget {
 
     return Scaffold(
       body: Container(
-
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
