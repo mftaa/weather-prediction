@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utility/theme_provider.dart';
+import 'about_page.dart';
+import 'privacy_policy_page.dart';
+import 'terms_of_service_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -151,20 +154,35 @@ class _SettingsPageState extends State<SettingsPage> {
             context: context,
             icon: Icons.info_outline,
             title: 'About',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutPage()),
+              );
+            },
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.privacy_tip_outlined,
             title: 'Privacy Policy',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()),
+              );
+            },
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.description_outlined,
             title: 'Terms of Service',
             isLast: true,
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TermsOfServicePage()),
+              );
+            },
           ),
         ],
       ),
