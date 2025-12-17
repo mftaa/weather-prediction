@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../utility/theme_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'variables.dart';
@@ -83,20 +85,33 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF5B9FE3), // Warna Biru Utama (Atas)
-              Color(0xFF7AB8F5),
-              Color(0xFFB8D4F0), // Warna Biru Muda (Bawah)
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3), // Warna Biru Utama (Atas)
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0), // Warna Biru Muda (Bawah)
+                  ],
+                ),
         ),
         child: SafeArea(
           child: Center(
@@ -136,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
@@ -149,12 +164,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
+                         Text(
                           "Login",
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF333333),
+                            color: isDark ? Colors.white : const Color(0xFF333333),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -163,6 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _emailController,
                           labelText: "Username",
                           prefixIcon: Icons.person_outline,
+                          isDark: isDark,
                         ),
                         const SizedBox(height: 20),
                         _buildTextField(
@@ -170,11 +186,12 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: "Password",
                           prefixIcon: Icons.lock_outline,
                           isPassword: true,
+                          isDark: isDark,
                         ),
                         const SizedBox(height: 30),
                         _buildLoginButton(),
                         const SizedBox(height: 20),
-                        _buildRegisterLink(),
+                        _buildRegisterLink(isDark),
                       ],
                     ),
                   ),
@@ -192,14 +209,15 @@ class _LoginPageState extends State<LoginPage> {
     required String labelText,
     required IconData prefixIcon,
     bool isPassword = false,
+    bool isDark = false,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword ? _isPasswordObscured : false,
-      style: const TextStyle(color: Colors.black87),
+      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: Colors.grey[600]),
+        labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600]),
         prefixIcon: Icon(prefixIcon, color: const Color(0xFF5B9FE3)),
         suffixIcon: isPassword
             ? IconButton(
@@ -207,7 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                   _isPasswordObscured
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: Colors.grey[400],
+                  color: isDark ? Colors.white70 : Colors.grey[400],
                 ),
                 onPressed: () {
                   setState(() {
@@ -217,7 +235,7 @@ class _LoginPageState extends State<LoginPage> {
               )
             : null,
         filled: true,
-        fillColor: const Color(0xFFF5F6FA), // Warna abu sangat muda
+        fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF5F6FA),
         contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         border: OutlineInputBorder(
@@ -261,13 +279,13 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildRegisterLink() {
+  Widget _buildRegisterLink(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           "Don't have an account? ",
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600]),
         ),
         GestureDetector(
           onTap: () {

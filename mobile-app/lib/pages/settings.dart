@@ -13,24 +13,37 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String _selectedUnit = 'Celsius';
+  // String _selectedUnit = 'Celsius'; // Removed local state
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF5B9FE3),
-              Color(0xFF7AB8F5),
-              Color(0xFFB8D4F0),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3),
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0),
+                  ],
+                ),
         ),
         child: SafeArea(
           child: Column(
@@ -107,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _selectedUnit,
+                  themeProvider.isCelsius ? 'Celsius' : 'Fahrenheit',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 16,
@@ -117,7 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
               ],
             ),
-            onTap: () => _showTemperatureUnitDialog(context),
+            onTap: () => _showTemperatureUnitDialog(context, themeProvider),
           ),
           _buildSettingsTile(
             context: context,
@@ -233,7 +246,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showTemperatureUnitDialog(BuildContext context) {
+  void _showTemperatureUnitDialog(BuildContext context, ThemeProvider themeProvider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -247,9 +260,9 @@ class _SettingsPageState extends State<SettingsPage> {
               RadioListTile<String>(
                 title: const Text('Celsius'),
                 value: 'Celsius',
-                groupValue: _selectedUnit,
+                groupValue: themeProvider.isCelsius ? 'Celsius' : 'Fahrenheit',
                 onChanged: (value) {
-                  if (value != null) setState(() => _selectedUnit = value);
+                  themeProvider.toggleUnit(true);
                   Navigator.of(context).pop();
                 },
                 activeColor: const Color(0xFF5B9FE3),
@@ -257,9 +270,9 @@ class _SettingsPageState extends State<SettingsPage> {
               RadioListTile<String>(
                 title: const Text('Fahrenheit'),
                 value: 'Fahrenheit',
-                groupValue: _selectedUnit,
+                groupValue: themeProvider.isCelsius ? 'Celsius' : 'Fahrenheit',
                 onChanged: (value) {
-                  if (value != null) setState(() => _selectedUnit = value);
+                  themeProvider.toggleUnit(false);
                   Navigator.of(context).pop();
                 },
                 activeColor: const Color(0xFF5B9FE3),

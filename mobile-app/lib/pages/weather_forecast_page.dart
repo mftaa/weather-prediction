@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../utility/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -148,20 +150,33 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF5B9FE3),
-              Color(0xFF7AB8F5),
-              Color(0xFFB8D4F0),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3),
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0),
+                  ],
+                ),
         ),
         child: SafeArea(
           child: Column(
@@ -395,6 +410,9 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   }
 
   Widget _buildStatsCard() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     if (_forecastData.isEmpty) return const SizedBox.shrink();
 
     final forecast = _forecastData[0];
@@ -415,7 +433,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -428,25 +446,25 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(Icons.water_drop_outlined, precip, 'Precipitation'),
-          _buildStatItem(Icons.opacity, '$humidity%', 'Humidity'),
-          _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed'),
+          _buildStatItem(Icons.water_drop_outlined, precip, 'Precipitation', isDark),
+          _buildStatItem(Icons.opacity, '$humidity%', 'Humidity', isDark),
+          _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed', isDark),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label) {
+  Widget _buildStatItem(IconData icon, String value, String label, bool isDark) {
     return Column(
       children: [
         Icon(icon, color: const Color(0xFF7AB5F0), size: 22),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
         const SizedBox(height: 2),
@@ -454,7 +472,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey[500],
+            color: isDark ? Colors.white70 : Colors.grey[500],
           ),
         ),
       ],
@@ -530,6 +548,9 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
   }
 
   Widget _buildDailyForecastList() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     if (_forecastData.isEmpty) {
       return const Center(
         child: Column(
@@ -548,7 +569,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -577,7 +598,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
             decoration: BoxDecoration(
               border: index < _forecastData.length - 1
                   ? Border(
-                      bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+                      bottom: BorderSide(color: isDark ? Colors.white24 : Colors.grey[200]!, width: 1),
                     )
                   : null,
             ),
@@ -590,7 +611,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                     dayName,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: isDark ? Colors.white70 : Colors.grey[700],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -609,7 +630,7 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                     condition,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.white60 : Colors.grey[600],
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -617,10 +638,10 @@ class _WeatherForecastPageState extends State<WeatherForecastPage> {
                 // Temperature
                 Text(
                   '$tempMax / $tempMin',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ],

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../utility/theme_provider.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -138,20 +140,33 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF5B9FE3),
-              Color(0xFF7AB8F5),
-              Color(0xFFB8D4F0),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3),
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0),
+                  ],
+                ),
         ),
         child: SafeArea(
           child: Center(
@@ -183,7 +198,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
@@ -201,6 +216,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             controller: usernameController,
                             label: 'Username',
                             icon: Icons.person_outline,
+                            isDark: isDark,
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return 'Please enter your username';
@@ -215,6 +231,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             controller: emailController,
                             label: 'Email',
                             icon: Icons.email_outlined,
+                            isDark: isDark,
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return 'Please enter your email';
@@ -230,6 +247,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             label: 'Password',
                             icon: Icons.lock_outline,
                             isPassword: true,
+                            isDark: isDark,
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return 'Please enter your password';
@@ -305,24 +323,27 @@ class _RegistrationPageState extends State<RegistrationPage> {
     required String label,
     required IconData icon,
     bool isPassword = false,
+    bool isDark = false,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       validator: validator,
       obscureText: isPassword,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: isDark ? Colors.white70 : null),
         prefixIcon: Icon(icon, color: const Color(0xFF5B9FE3)),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[50],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(color: isDark ? Colors.transparent : Colors.grey[200]!),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),

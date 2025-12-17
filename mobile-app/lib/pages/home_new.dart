@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import '../utility/theme_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 
 class HomePageNew extends StatefulWidget {
@@ -15,6 +18,7 @@ class _HomePageNewState extends State<HomePageNew> {
   Map<String, dynamic>? _currentWeather;
   List<dynamic> _hourlyForecast = [];
   List<dynamic> _dailyForecast = [];
+  List<double> _chartData = [];
   String _location = "Semarang"; // Default location
 
   @override
@@ -58,17 +62,23 @@ class _HomePageNewState extends State<HomePageNew> {
         },
       );
 
+      final requestChart = ApiService.get(
+        '/weather-data/line-chart?location=$_location&limit=10',
+      );
+
       // 2. JALANKAN SEMUA BERSAMAAN
       final results = await Future.wait([
         requestCurrent,
         requestHourly,
         requestDaily,
+        requestChart,
       ]);
 
       // 3. OLAH HASILNYA
       final currentResponse = results[0];
       final hourlyResponse = results[1];
       final dailyResponse = results[2];
+      final chartResponse = results[3];
 
       setState(() {
         if (currentResponse.statusCode == 200) {
@@ -81,6 +91,10 @@ class _HomePageNewState extends State<HomePageNew> {
         if (dailyResponse.statusCode == 200) {
           final data = json.decode(dailyResponse.body);
           _dailyForecast = data['data'] ?? [];
+        }
+        if (chartResponse.statusCode == 200) {
+           final List<dynamic> data = json.decode(chartResponse.body);
+           _chartData = data.map((e) => (e as num).toDouble()).toList();
         }
       });
     } catch (e) {
@@ -97,20 +111,33 @@ class _HomePageNewState extends State<HomePageNew> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF5B9FE3),
-              Color(0xFF7AB8F5),
-              Color(0xFFB8D4F0),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3),
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0),
+                  ],
+                ),
         ),
         child: SafeArea(
           child: _isLoading
@@ -143,6 +170,9 @@ class _HomePageNewState extends State<HomePageNew> {
 
                                 // Bagian ini yang sudah diperbarui
                                 _buildOtherCitiesSection(),
+                                
+                                const SizedBox(height: 20),
+                                _buildChartSection(),
 
                                 const SizedBox(height: 20),
                               ],
@@ -159,9 +189,12 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   void _showMenuOptions(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDark = themeProvider.isDarkMode;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
@@ -176,7 +209,7 @@ class _HomePageNewState extends State<HomePageNew> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: isDark ? Colors.grey[600] : Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -191,8 +224,10 @@ class _HomePageNewState extends State<HomePageNew> {
                 ),
                 child: const Icon(Icons.refresh, color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Refresh Data',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: Text('Refresh Data',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context); // Tutup menu
                 _fetchWeatherData(); // Panggil fungsi refresh
@@ -211,8 +246,10 @@ class _HomePageNewState extends State<HomePageNew> {
                 child:
                     const Icon(Icons.person_outline, color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Profile',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: Text('Profile',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/profile');
@@ -231,8 +268,10 @@ class _HomePageNewState extends State<HomePageNew> {
                 child: const Icon(Icons.settings_outlined,
                     color: Color(0xFF5B9FE3)),
               ),
-              title: const Text('Settings',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: Text('Settings',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/settings');
@@ -250,8 +289,10 @@ class _HomePageNewState extends State<HomePageNew> {
                 ),
                 child: const Icon(Icons.logout, color: Colors.redAccent),
               ),
-              title: const Text('Logout',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: Text('Logout',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context);
                 // Navigasi balik ke Login & hapus history stack
@@ -313,9 +354,10 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Widget _buildMainWeatherCard() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final weather = _currentWeather ?? {};
     final tempRaw = weather['temp'];
-    final temp = (tempRaw is num) ? tempRaw.toStringAsFixed(0) : '0';
+    final temp = _convertTemp(tempRaw, themeProvider.isCelsius);
 
     final isRaining = weather['isRaining'] ?? 0;
     final lightIntensity = weather['lightIntensity'];
@@ -434,6 +476,9 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Widget _buildStatsCard() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     final weather = _currentWeather ?? {};
     final humRaw = weather['humidity'];
     final humidity = (humRaw is num) ? humRaw.toStringAsFixed(0) : '0';
@@ -446,7 +491,7 @@ class _HomePageNewState extends State<HomePageNew> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -459,25 +504,25 @@ class _HomePageNewState extends State<HomePageNew> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(Icons.opacity, '$humidity%', 'Humidity'),
-          _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed'),
-          _buildStatItem(Icons.speed, '$airPressure hPa', 'Air pressure'),
+          _buildStatItem(Icons.opacity, '$humidity%', 'Humidity', isDark),
+          _buildStatItem(Icons.air, '$windSpeed km/h', 'Wind speed', isDark),
+          _buildStatItem(Icons.speed, '$airPressure hPa', 'Air pressure', isDark),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label) {
+  Widget _buildStatItem(IconData icon, String value, String label, bool isDark) {
     return Column(
       children: [
         Icon(icon, color: const Color(0xFF7AB5F0), size: 22),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
         const SizedBox(height: 2),
@@ -485,7 +530,7 @@ class _HomePageNewState extends State<HomePageNew> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey[500],
+            color: isDark ? Colors.white70 : Colors.grey[500],
           ),
         ),
       ],
@@ -493,6 +538,7 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Widget _buildHourlyForecast() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final nowWIB = DateTime.now().toUtc().add(const Duration(hours: 7));
     final currentHour = nowWIB.hour;
 
@@ -564,18 +610,7 @@ class _HomePageNewState extends State<HomePageNew> {
               }
 
               var tempRaw = forecast['temp'];
-              String temp = '0';
-              if (tempRaw != null) {
-                if (tempRaw is num) {
-                  temp = tempRaw.round().toString();
-                } else {
-                  temp =
-                      double.tryParse(tempRaw.toString())?.round().toString() ??
-                          '0';
-                }
-              } else {
-                temp = '-';
-              }
+              String temp = _convertTemp(tempRaw, themeProvider.isCelsius);
 
               final condition = forecast['conditions'] ?? 'Cloudy';
               final isActive = index == 0;
@@ -712,6 +747,9 @@ class _HomePageNewState extends State<HomePageNew> {
     required String temp,
     required bool isAvailable,
   }) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final displayTemp = _convertTemp(temp, themeProvider.isCelsius);
+
     return GestureDetector(
       onTap: () {
         if (isAvailable) {
@@ -814,7 +852,7 @@ class _HomePageNewState extends State<HomePageNew> {
                 Row(
                   children: [
                     Text(
-                      '$temp°',
+                      '$displayTemp°',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
@@ -835,6 +873,118 @@ class _HomePageNewState extends State<HomePageNew> {
         ),
       ),
     );
+  }
+
+  Widget _buildChartSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Wind Speed Trend',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: _chartData.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No Data Available',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              : LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: Colors.white.withOpacity(0.1),
+                          strokeWidth: 1,
+                        );
+                      },
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: _chartData.length.toDouble() - 1,
+                    minY: 0,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: _chartData
+                            .asMap()
+                            .entries
+                            .map((e) => FlSpot(e.key.toDouble(), e.value))
+                            .toList(),
+                        isCurved: true,
+                        color: Colors.white,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  String _convertTemp(dynamic value, bool isCelsius) {
+    double? temp;
+    if (value is num) {
+      temp = value.toDouble();
+    } else if (value is String) {
+      temp = double.tryParse(value);
+    }
+
+    if (temp == null) return '-';
+
+    if (!isCelsius) {
+      temp = (temp * 9 / 5) + 32;
+    }
+
+    return temp.round().toString();
   }
 
   IconData _getWeatherIcon(String condition) {

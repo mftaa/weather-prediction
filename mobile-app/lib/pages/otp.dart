@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../utility/theme_provider.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -6,6 +8,9 @@ class OtpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     final TextEditingController otpController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
 
@@ -29,6 +34,29 @@ class OtpPage extends StatelessWidget {
 
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1A1A1A),
+                    Color(0xFF2C2C2C),
+                    Color(0xFF3D3D3D),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF5B9FE3),
+                    Color(0xFF7AB8F5),
+                    Color(0xFFB8D4F0),
+                  ],
+                ),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(

@@ -12,6 +12,14 @@ class NotificationService {
 
   NotificationService._internal();
 
+  bool _notificationsEnabled = true;
+
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  void toggleNotifications(bool enable) {
+    _notificationsEnabled = enable;
+  }
+
   Future<void> init() async {
     // Android initialization
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -46,6 +54,8 @@ class NotificationService {
   }
 
   Future<void> showRainAlert(String title, String body) async {
+    if (!_notificationsEnabled) return;
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'rain_alert_channel',
